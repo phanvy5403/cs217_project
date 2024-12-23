@@ -22,6 +22,7 @@
         </ul>
 
         <div class="tab-content" id="lawTabsContent">
+            <!-- Law Search Tab -->
             <div class="tab-pane fade show active" id="tra-cuu" role="tabpanel" aria-labelledby="tra-cuu-tab">
                 <h2 class="text-center my-4">Tra cứu luật giao thông</h2>
 
@@ -59,6 +60,8 @@
                     </table>
                 </div>
             </div>
+
+            <!-- Law Management Tab -->
             <div class="tab-pane fade" id="crud" role="tabpanel" aria-labelledby="crud-tab">
                 <h2 class="text-center my-4">Thêm mới luật giao thông</h2>
                 <form id="addLawForm" method="POST" action="/add">
@@ -83,23 +86,43 @@
         </div>
     </div>
 
+    <!-- Law Details Modal -->
+    <div class="modal fade" id="lawDetailsModal" tabindex="-1" aria-labelledby="lawDetailsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="lawDetailsModalLabel">Chi tiết luật giao thông</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p><strong>ID:</strong> <span id="modalLawID"></span></p>
+                    <p><strong>Điều:</strong> <span id="modalLawNumber"></span></p>
+                    <p><strong>Loại vi phạm:</strong> <span id="modalViolationName"></span></p>
+                    <p><strong>Nội dung:</strong> <span id="modalViolationDescription"></span></p>
+                    <p><strong>Phương tiện:</strong> <span id="modalVehicleTypeName"></span></p>
+                    <p><strong>Mức phạt:</strong> <span id="modalPenaltyAmount"></span></p>
+                    <p><strong>Ngày hiệu lực:</strong> <span id="modalEffectiveDate"></span></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         function fetchLaws(query = '', vehicle = '', penalty = '') {
             const url = `/search?query=${encodeURIComponent(query)}&vehicle=${encodeURIComponent(vehicle)}&penalty=${encodeURIComponent(penalty)}`;
             
-            // Sử dụng Ajax với Fetch API
             fetch(url)
                 .then(response => response.json())
                 .then(data => {
                     const tableBody = document.getElementById('lawTableBody');
                     tableBody.innerHTML = ''; // Clear table
                     if (data.length === 0) {
-                        tableBody.insertAdjacentHTML('beforeend', `<tr><td colspan="6" class="text-center">Không tìm thấy dữ liệu</td></tr>`);
+                        tableBody.insertAdjacentHTML('beforeend', `<tr><td colspan="7" class="text-center">Không tìm thấy dữ liệu</td></tr>`);
                     } else {
                         data.forEach((law, index) => {
                             const row = `
-                                <tr>
+                                <tr onclick="showLawDetails(${JSON.stringify(law).replace(/"/g, '&quot;')})">
                                     <td>${index + 1}</td>
                                     <td>${law.LawNumber || '-'}</td>
                                     <td>${law.ViolationName || '-'}</td>
@@ -115,8 +138,20 @@
                 .catch(error => {
                     console.error('Error fetching laws:', error);
                     const tableBody = document.getElementById('lawTableBody');
-                    tableBody.innerHTML = `<tr><td colspan="6" class="text-center text-danger">Lỗi khi tải dữ liệu</td></tr>`;
+                    tableBody.innerHTML = `<tr><td colspan="7" class="text-center text-danger">Lỗi khi tải dữ liệu</td></tr>`;
                 });
+        }
+
+        function showLawDetails(law) {
+            document.getElementById('modalLawID').innerText = law.ID || '-';
+            document.getElementById('modalLawNumber').innerText = law.LawNumber || '-';
+            document.getElementById('modalViolationName').innerText = law.ViolationName || '-';
+            document.getElementById('modalViolationDescription').innerText = law.ViolationDescription || '-';
+            document.getElementById('modalVehicleTypeName').innerText = law.VehicleTypeName || '-';
+            document.getElementById('modalPenaltyAmount').innerText = law.PenaltyAmount || '-';
+            document.getElementById('modalEffectiveDate').innerText = law.EffectiveDate || '-';
+            const modal = new bootstrap.Modal(document.getElementById('lawDetailsModal'));
+            modal.show();
         }
 
         document.getElementById('searchQuery').addEventListener('input', () => {
