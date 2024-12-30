@@ -14,9 +14,11 @@
                     Tra cứu luật
                 </button>
             </li>
+
+
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="crud-tab" data-bs-toggle="tab" data-bs-target="#crud" type="button" role="tab" aria-controls="crud" aria-selected="false">
-                    Quản lý luật
+                    Hệ thống xử phạt
                 </button>
             </li>
         </ul>
@@ -25,6 +27,7 @@
             <!-- Law Search Tab -->
             <div class="tab-pane fade show active" id="tra-cuu" role="tabpanel" aria-labelledby="tra-cuu-tab">
                 <h2 class="text-center my-4">Tra cứu luật giao thông</h2>
+                <button class="btn btn-success mb-3" data-bs-toggle="modal" data-bs-target="#addLawModal">Thêm luật</button>
 
                 <div class="row mb-4">
                     <div class="col-md-4">
@@ -33,8 +36,8 @@
                     <div class="col-md-4">
                         <select id="searchVehicle" class="form-select">
                             <option value="">Loại phương tiện</option>
-                            <option value="Xe máy">Xe máy</option>
                             <option value="Ô tô">Ô tô</option>
+                            <option value="Mô tô, gắn máy">Mô tô, gắn máy</option>
                         </select>
                     </div>
                     <div class="col-md-4">
@@ -47,12 +50,12 @@
                         <thead class="table-primary">
                             <tr>
                                 <td>ID</td>
-                                <td>Điều</td>
                                 <td>Loại vi phạm</td>
                                 <td>Nội dung</td>
                                 <td>Phương tiện</td>
                                 <td>Mức phạt</td>
-                                <td>Ngày</td>
+                                <td>Ngày Áp Dụng</td>
+                                <td>Cập nhật</td>
                             </tr>
                         </thead>
                         <tbody id="lawTableBody">
@@ -63,25 +66,46 @@
 
             <!-- Law Management Tab -->
             <div class="tab-pane fade" id="crud" role="tabpanel" aria-labelledby="crud-tab">
-                <h2 class="text-center my-4">Thêm mới luật giao thông</h2>
-                <form id="addLawForm" method="POST" action="/add">
-                    <div class="mb-3">
-                        <label for="rule" class="form-label">Quy định</label>
-                        <input type="text" class="form-control" id="rule" name="rule" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="penalty" class="form-label">Hình phạt</label>
-                        <input type="text" class="form-control" id="penalty" name="penalty" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="vehicle" class="form-label">Loại phương tiện</label>
-                        <select id="vehicle" name="vehicle" class="form-select" required>
-                            <option value="Xe máy">Xe máy</option>
-                            <option value="Ô tô">Ô tô</option>
-                        </select>
-                    </div>
-                    <button type="submit" class="btn btn-primary">Thêm Luật</button>
-                </form>
+                <div id="violation-container">
+                <label for="violation-count">Chọn số lỗi vi phạm:</label>
+                <input type="number" id="violation-count" min="1" value="1">
+                <div id="violations">
+                    <!-- Các lỗi vi phạm sẽ được thêm động tại đây -->
+                </div>
+                <button id="calculate-penalty">Hiển thị hình phạt</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Law Modal -->
+    <div class="modal fade" id="addLawModal" tabindex="-1" aria-labelledby="addLawModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addLawModalLabel">Thêm luật mới</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addLawForm">
+                        <div class="mb-3">
+                            <label for="rule" class="form-label">Quy định</label>
+                            <input type="text" class="form-control" id="rule" name="rule" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="penalty" class="form-label">Hình phạt</label>
+                            <input type="text" class="form-control" id="penalty" name="penalty" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="vehicle" class="form-label">Loại phương tiện</label>
+                            <select id="vehicle" name="vehicle" class="form-select" required>
+                                <option value="Mô tô, gắn máy">Mô tô, gắn máy</option>
+                                <option value="Ô tô">Ô tô</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Thêm</button>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
@@ -95,13 +119,12 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <p><strong>ID:</strong> <span id="modalLawID"></span></p>
                     <p><strong>Điều:</strong> <span id="modalLawNumber"></span></p>
                     <p><strong>Loại vi phạm:</strong> <span id="modalViolationName"></span></p>
                     <p><strong>Nội dung:</strong> <span id="modalViolationDescription"></span></p>
                     <p><strong>Phương tiện:</strong> <span id="modalVehicleTypeName"></span></p>
                     <p><strong>Mức phạt:</strong> <span id="modalPenaltyAmount"></span></p>
-                    <p><strong>Ngày hiệu lực:</strong> <span id="modalEffectiveDate"></span></p>
+                    <p><strong>Ngày áp dụng:</strong> <span id="modalEffectiveDate"></span></p>
                 </div>
             </div>
         </div>
@@ -121,15 +144,21 @@
                         tableBody.insertAdjacentHTML('beforeend', `<tr><td colspan="7" class="text-center">Không tìm thấy dữ liệu</td></tr>`);
                     } else {
                         data.forEach((law, index) => {
+                            const formattedDate = law.NgayApDung
+                                ? new Date(law.NgayApDung).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })
+                                : '-';
                             const row = `
                                 <tr onclick="showLawDetails(${JSON.stringify(law).replace(/"/g, '&quot;')})">
                                     <td>${index + 1}</td>
-                                    <td>${law.LawNumber || '-'}</td>
-                                    <td>${law.ViolationName || '-'}</td>
-                                    <td>${law.ViolationDescription || '-'}</td>
-                                    <td>${law.VehicleTypeName || '-'}</td>
-                                    <td>${law.PenaltyAmount || '-'}</td>
-                                    <td>${law.EffectiveDate || '-'}</td>
+                                    <td>${law.LoiViPham || '-'}</td>
+                                    <td>${law.ChiTietLoi || '-'}</td>
+                                    <td>${law.TenPhuongTien || '-'}</td>
+                                    <td>${law.HinhPhat || '-'}</td>
+                                    <td>${formattedDate || '-'}</td>
+                                    <td>
+                                        <button class="btn btn-warning btn-sm me-2">Sửa</button>
+                                        <button class="btn btn-danger btn-sm">Xóa</button>
+                                    </td>
                                 </tr>`;
                             tableBody.insertAdjacentHTML('beforeend', row);
                         });
@@ -143,13 +172,15 @@
         }
 
         function showLawDetails(law) {
-            document.getElementById('modalLawID').innerText = law.ID || '-';
-            document.getElementById('modalLawNumber').innerText = law.LawNumber || '-';
-            document.getElementById('modalViolationName').innerText = law.ViolationName || '-';
-            document.getElementById('modalViolationDescription').innerText = law.ViolationDescription || '-';
-            document.getElementById('modalVehicleTypeName').innerText = law.VehicleTypeName || '-';
-            document.getElementById('modalPenaltyAmount').innerText = law.PenaltyAmount || '-';
-            document.getElementById('modalEffectiveDate').innerText = law.EffectiveDate || '-';
+            const formattedDate = law.NgayApDung
+                                ? new Date(law.NgayApDung).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })
+                                : '-';
+            document.getElementById('modalLawNumber').innerText = law.DieuKhoan || '-';
+            document.getElementById('modalViolationName').innerText = law.LoiViPham || '-';
+            document.getElementById('modalViolationDescription').innerText = law.ChiTietLoi || '-';
+            document.getElementById('modalVehicleTypeName').innerText = law.TenPhuongTien || '-';
+            document.getElementById('modalPenaltyAmount').innerText = law.HinhPhat || '-';
+            document.getElementById('modalEffectiveDate').innerText = formattedDate || '-';
             const modal = new bootstrap.Modal(document.getElementById('lawDetailsModal'));
             modal.show();
         }
@@ -181,6 +212,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             fetchLaws();
         });
+        
     </script>
 </body>
 </html>

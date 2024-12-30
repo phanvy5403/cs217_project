@@ -7,7 +7,7 @@ db_config = {
     'host': 'localhost',
     'user': 'root',
     'password': 'Phanvylqd@112',
-    'database': 'traffic_laws_db',
+    'database': 'luatgiaothong',
     'charset': 'utf8mb4'
 }
 
@@ -36,53 +36,58 @@ def add_law():
 
 @app.route('/search', methods=['GET'])
 def search():
-    query = request.args.get('query', '').lower()  
-    vehicle = request.args.get('vehicle', '').lower()  
-    penalty = request.args.get('penalty', '')  
-    violation_description = request.args.get('violation_description', '').lower()  
+    # Get query parameters
+    query = request.args.get('query', '').strip().lower()  
+    vehicle = request.args.get('vehicle', '').strip().lower()
+    penalty = request.args.get('penalty', '').strip().lower()
 
+    # Establish database connection
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
 
-    sql_query = """SELECT 
-                        l.LawID,
-                        v.ViolationName,
-                        p.PenaltyAmount,
-                        vt.VehicleTypeName,
-                        v.Description AS ViolationDescription,
-                        l.LawNumber,
-                        v.ViolationName,
-                        l.EffectiveDate
-                   FROM 
-                        Laws l
-                   JOIN 
-                        Violations v ON l.LawID = v.LawID
-                   JOIN 
-                        Penalties p ON v.ViolationID = p.ViolationID
-                   JOIN 
-                        ViolationVehicles vv ON v.ViolationID = vv.ViolationID
-                   JOIN 
-                        Vehicles vt ON vv.VehicleTypeID = vt.VehicleTypeID
-                   WHERE 
-                        v.ViolationName LIKE %s COLLATE utf8mb4_unicode_ci
-                   """
-    
-    params = [f"%{query}%"]
-    if vehicle:
-        sql_query += " AND vt.VehicleTypeName LIKE %s COLLATE utf8mb4_unicode_ci"
-        params.append(f"%{vehicle}%")
-    if penalty:
-        sql_query += " AND p.PenaltyAmount = %s"
-        params.append(penalty)
-    if violation_description:
-        sql_query += " AND v.Description LIKE %s COLLATE utf8mb4_unicode_ci"
-        params.append(f"%{violation_description}%")
+    # Construct base SQL query
+    sql_query = """
+        SELECT 
+            loivipham.NoiDung AS LoiViPham,
+            hinhphat.NoiDung AS HinhPhat,
+            phuongtien.TenPhuongTien,
+            chitietloi.NoiDung AS ChiTietLoi,
+            luat.DieuKhoan,
+            luat.NgayApDung
+        FROM 
+            luat
+        JOIN 
+            loivipham ON loivipham.LoiViPhamID = luat.LoiViPhamID
+        JOIN 
+            hinhphat ON hinhphat.HinhPhatID = luat.HinhPhatID
+        JOIN 
+            phuongtien ON phuongtien.PhuongTienID = luat.PhuongTienID
+        JOIN 
+            chitietloi ON chitietloi.ChiTietLoiID = luat.ChiTietLoiID
+        WHERE 
+            LOWER(loivipham.NoiDung) LIKE %s COLLATE utf8mb4_unicode_ci
+    """
 
+    params = [f"%{query}%"]
+
+    if vehicle:
+        sql_query += " AND LOWER(phuongtien.TenPhuongTien) = %s"
+        params.append(vehicle)
+
+    if penalty:
+        sql_query += " AND LOWER(hinhphat.NoiDung) LIKE %s COLLATE utf8mb4_unicode_ci"
+        params.append(f"%{penalty}%")
+
+    # Execute the SQL query
     cursor.execute(sql_query, params)
     laws = cursor.fetchall()
+
+    # Close database connection
     conn.close()
 
+    # Return results as JSON
     return jsonify(laws)
+
 
 if __name__ == '__main__':
     app.run(debug=True)
