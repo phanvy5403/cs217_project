@@ -1,37 +1,48 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tra cứu Luật Giao Thông</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
+
 <body>
     <div class="container mt-5">
+        <div class="d-flex justify-content-end">
+            {% if current_user.is_authenticated %}
+                <a href="/logout" class="btn btn-danger">Logout</a>
+            {% endif %}
+        </div>
         <ul class="nav nav-tabs" id="lawTabs" role="tablist">
             <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="tra-cuu-tab" data-bs-toggle="tab" data-bs-target="#tra-cuu" type="button" role="tab" aria-controls="tra-cuu" aria-selected="true">
+                <button class="nav-link active" id="tra-cuu-tab" data-bs-toggle="tab" data-bs-target="#tra-cuu"
+                    type="button" role="tab" aria-controls="tra-cuu" aria-selected="true">
                     Tra cứu luật
                 </button>
             </li>
 
 
             <li class="nav-item" role="presentation">
-                <button class="nav-link" id="crud-tab" data-bs-toggle="tab" data-bs-target="#crud" type="button" role="tab" aria-controls="crud" aria-selected="false">
+                <button class="nav-link" id="crud-tab" data-bs-toggle="tab" data-bs-target="#crud" type="button"
+                    role="tab" aria-controls="crud" aria-selected="false">
                     Hệ thống xử phạt
                 </button>
             </li>
         </ul>
 
         <div class="tab-content" id="lawTabsContent">
+
             <!-- Law Search Tab -->
             <div class="tab-pane fade show active" id="tra-cuu" role="tabpanel" aria-labelledby="tra-cuu-tab">
                 <h2 class="text-center my-4">Tra cứu luật giao thông</h2>
-                <button class="btn btn-success mb-3" data-bs-toggle="modal" data-bs-target="#addLawModal">Thêm luật</button>
+                <button class="btn btn-success mb-3" data-bs-toggle="modal" data-bs-target="#addLawModal">Thêm
+                    luật</button>
 
                 <div class="row mb-4">
                     <div class="col-md-4">
-                        <input type="text" id="searchQuery" class="form-control" placeholder="Tìm theo quy định...">
+                        <input type="text" id="searchQuery" class="form-control" placeholder="Tìm theo lỗi vi phạm...">
                     </div>
                     <div class="col-md-4">
                         <select id="searchVehicle" class="form-select">
@@ -41,19 +52,19 @@
                         </select>
                     </div>
                     <div class="col-md-4">
-                        <input type="text" id="searchPenalty" class="form-control" placeholder="Tìm theo mức phạt...">
+                        <input type="text" id="searchPenalty" class="form-control" placeholder="Tìm theo hình phạt...">
                     </div>
                 </div>
 
                 <div class="table-responsive">
-                    <table class="table table-bordered table-hover">
+                    <table id="lawTable" class="table table-bordered table-hover">
                         <thead class="table-primary">
                             <tr>
                                 <td>ID</td>
                                 <td>Loại vi phạm</td>
                                 <td>Nội dung</td>
                                 <td>Phương tiện</td>
-                                <td>Mức phạt</td>
+                                <td>Hình phạt</td>
                                 <td>Ngày Áp Dụng</td>
                                 <td>Cập nhật</td>
                             </tr>
@@ -62,157 +73,36 @@
                         </tbody>
                     </table>
                 </div>
+
+                <!-- Pagination controls -->
+                <nav aria-label="Page navigation">
+                    <ul class="pagination justify-content-center" id="pagination">
+                        <!-- Pagination items will be dynamically added here -->
+                    </ul>
+                </nav>
             </div>
 
             <!-- Law Management Tab -->
             <div class="tab-pane fade" id="crud" role="tabpanel" aria-labelledby="crud-tab">
                 <div id="violation-container">
-                <label for="violation-count">Chọn số lỗi vi phạm:</label>
-                <input type="number" id="violation-count" min="1" value="1">
-                <div id="violations">
-                    <!-- Các lỗi vi phạm sẽ được thêm động tại đây -->
-                </div>
-                <button id="calculate-penalty">Hiển thị hình phạt</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Add Law Modal -->
-    <div class="modal fade" id="addLawModal" tabindex="-1" aria-labelledby="addLawModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="addLawModalLabel">Thêm luật mới</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="addLawForm">
-                        <div class="mb-3">
-                            <label for="rule" class="form-label">Quy định</label>
-                            <input type="text" class="form-control" id="rule" name="rule" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="penalty" class="form-label">Hình phạt</label>
-                            <input type="text" class="form-control" id="penalty" name="penalty" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="vehicle" class="form-label">Loại phương tiện</label>
-                            <select id="vehicle" name="vehicle" class="form-select" required>
-                                <option value="Mô tô, gắn máy">Mô tô, gắn máy</option>
-                                <option value="Ô tô">Ô tô</option>
-                            </select>
-                        </div>
-                        <button type="submit" class="btn btn-primary">Thêm</button>
-                    </form>
+                    <label for="violation-count">Chọn số lỗi vi phạm:</label>
+                    <input type="number" id="violation-count" min="1" value="1">
+                    <div id="violations">
+                        <!-- Các lỗi vi phạm sẽ được thêm động tại đây -->
+                    </div>
+                    <button id="calculate-penalty">Hiển thị hình phạt</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Law Details Modal -->
-    <div class="modal fade" id="lawDetailsModal" tabindex="-1" aria-labelledby="lawDetailsModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="lawDetailsModalLabel">Chi tiết luật giao thông</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <p><strong>Điều:</strong> <span id="modalLawNumber"></span></p>
-                    <p><strong>Loại vi phạm:</strong> <span id="modalViolationName"></span></p>
-                    <p><strong>Nội dung:</strong> <span id="modalViolationDescription"></span></p>
-                    <p><strong>Phương tiện:</strong> <span id="modalVehicleTypeName"></span></p>
-                    <p><strong>Mức phạt:</strong> <span id="modalPenaltyAmount"></span></p>
-                    <p><strong>Ngày áp dụng:</strong> <span id="modalEffectiveDate"></span></p>
-                </div>
-            </div>
-        </div>
-    </div>
+    {% include 'add_modal.html' %}
+    {% include 'edit_modal.html' %}
+    {% include 'detail_modal.html' %}
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        function fetchLaws(query = '', vehicle = '', penalty = '') {
-            const url = `/search?query=${encodeURIComponent(query)}&vehicle=${encodeURIComponent(vehicle)}&penalty=${encodeURIComponent(penalty)}`;
-            
-            fetch(url)
-                .then(response => response.json())
-                .then(data => {
-                    const tableBody = document.getElementById('lawTableBody');
-                    tableBody.innerHTML = ''; // Clear table
-                    if (data.length === 0) {
-                        tableBody.insertAdjacentHTML('beforeend', `<tr><td colspan="7" class="text-center">Không tìm thấy dữ liệu</td></tr>`);
-                    } else {
-                        data.forEach((law, index) => {
-                            const formattedDate = law.NgayApDung
-                                ? new Date(law.NgayApDung).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })
-                                : '-';
-                            const row = `
-                                <tr onclick="showLawDetails(${JSON.stringify(law).replace(/"/g, '&quot;')})">
-                                    <td>${index + 1}</td>
-                                    <td>${law.LoiViPham || '-'}</td>
-                                    <td>${law.ChiTietLoi || '-'}</td>
-                                    <td>${law.TenPhuongTien || '-'}</td>
-                                    <td>${law.HinhPhat || '-'}</td>
-                                    <td>${formattedDate || '-'}</td>
-                                    <td>
-                                        <button class="btn btn-warning btn-sm me-2">Sửa</button>
-                                        <button class="btn btn-danger btn-sm">Xóa</button>
-                                    </td>
-                                </tr>`;
-                            tableBody.insertAdjacentHTML('beforeend', row);
-                        });
-                    }
-                })
-                .catch(error => {
-                    console.error('Error fetching laws:', error);
-                    const tableBody = document.getElementById('lawTableBody');
-                    tableBody.innerHTML = `<tr><td colspan="7" class="text-center text-danger">Lỗi khi tải dữ liệu</td></tr>`;
-                });
-        }
-
-        function showLawDetails(law) {
-            const formattedDate = law.NgayApDung
-                                ? new Date(law.NgayApDung).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })
-                                : '-';
-            document.getElementById('modalLawNumber').innerText = law.DieuKhoan || '-';
-            document.getElementById('modalViolationName').innerText = law.LoiViPham || '-';
-            document.getElementById('modalViolationDescription').innerText = law.ChiTietLoi || '-';
-            document.getElementById('modalVehicleTypeName').innerText = law.TenPhuongTien || '-';
-            document.getElementById('modalPenaltyAmount').innerText = law.HinhPhat || '-';
-            document.getElementById('modalEffectiveDate').innerText = formattedDate || '-';
-            const modal = new bootstrap.Modal(document.getElementById('lawDetailsModal'));
-            modal.show();
-        }
-
-        document.getElementById('searchQuery').addEventListener('input', () => {
-            fetchLaws(
-                document.getElementById('searchQuery').value,
-                document.getElementById('searchVehicle').value,
-                document.getElementById('searchPenalty').value
-            );
-        });
-
-        document.getElementById('searchVehicle').addEventListener('change', () => {
-            fetchLaws(
-                document.getElementById('searchQuery').value,
-                document.getElementById('searchVehicle').value,
-                document.getElementById('searchPenalty').value
-            );
-        });
-
-        document.getElementById('searchPenalty').addEventListener('input', () => {
-            fetchLaws(
-                document.getElementById('searchQuery').value,
-                document.getElementById('searchVehicle').value,
-                document.getElementById('searchPenalty').value
-            );
-        });
-
-        document.addEventListener('DOMContentLoaded', () => {
-            fetchLaws();
-        });
-        
-    </script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="/js/app.js"></script>
 </body>
+
 </html>

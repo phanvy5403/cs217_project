@@ -29,3 +29,12 @@ CREATE TABLE Luat (
     FOREIGN KEY (ChiTietLoiID) REFERENCES ChiTietLoi(ChiTietLoiID),
     FOREIGN KEY (HinhPhatID) REFERENCES HinhPhat(HinhPhatID)
 );
+
+ALTER TABLE LoiViPham
+ADD CONSTRAINT unique_noidung UNIQUE (NoiDung(255));
+
+ALTER TABLE ChiTietLoi
+ADD CONSTRAINT unique_noidung UNIQUE (NoiDung(255));
+
+ALTER TABLE HinhPhat
+ADD CONSTRAINT unique_noidung UNIQUE (NoiDung(255));
