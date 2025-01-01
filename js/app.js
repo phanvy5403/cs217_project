@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             : '-';
                         const row = `
                             <tr>
-                                <td onclick="showLawDetails(${JSON.stringify(law).replace(/"/g, '&quot;')})">${index + 1}</td>
+                                <td onclick="showLawDetails(${JSON.stringify(law).replace(/"/g, '&quot;')})">${law.LuatID}</td>
                                 <td onclick="showLawDetails(${JSON.stringify(law).replace(/"/g, '&quot;')})">${law.LoiViPham || '-'}</td>
                                 <td onclick="showLawDetails(${JSON.stringify(law).replace(/"/g, '&quot;')})">${law.ChiTietLoi || '-'}</td>
                                 <td onclick="showLawDetails(${JSON.stringify(law).replace(/"/g, '&quot;')})">${law.TenPhuongTien || '-'}</td>
@@ -27,7 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <td onclick="showLawDetails(${JSON.stringify(law).replace(/"/g, '&quot;')})">${formattedDate || '-'}</td>
                                 ${isAdmin ? `<td>
                                     <button class="btn btn-warning btn-sm me-2" onclick="showEditLawModal(${JSON.stringify(law).replace(/"/g, '&quot;')})">Sửa</button>
-                                    <button class="btn btn-danger btn-sm" onclick="deleteLaw(${law.ID})">Xóa</button>
+                                    <button class="btn btn-danger btn-sm" onclick="deleteLaw(${law.LuatID})">Xóa</button>
                                 </td>` : ''}
                             </tr>`;
                         tableBody.insertAdjacentHTML('beforeend', row);
@@ -94,8 +94,8 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('editNgayApDung').value = law.NgayApDung || '';
 
         // Store the law ID for later use
-        document.getElementById('saveEditedLawButton').setAttribute('data-law-id', law.ID);
-        console.log('Editing law ID:', law.ID);
+        document.getElementById('saveEditedLawButton').setAttribute('data-law-id', law.LuatID);
+        console.log('Editing law ID:', law.LuatID);
 
         const modal = new bootstrap.Modal(document.getElementById('editLawModal'));
         modal.show();

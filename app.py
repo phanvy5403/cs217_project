@@ -4,12 +4,14 @@ import mysql.connector
 import os
 from functools import wraps
 import logging
+from logging.handlers import RotatingFileHandler  # Add this import
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
 
 login_manager = LoginManager()
 login_manager.init_app(app)
+login_manager.login_view = 'login'
 login_manager.login_view = 'login'
 
 db_config = {
@@ -137,7 +139,7 @@ def delete_law(law_id):
     cursor = conn.cursor()
 
     try:
-        sql_delete = "DELETE FROM laws WHERE ID = %s"
+        sql_delete = "DELETE FROM Luat WHERE LuatID = %s"
         cursor.execute(sql_delete, (law_id,))
         conn.commit()
         flash('Law deleted successfully!', 'success')
@@ -145,6 +147,7 @@ def delete_law(law_id):
     except Exception as e:
         conn.rollback()
         flash(f'Error: {str(e)}', 'danger')
+        logging.error(f'Error deleting law: {str(e)}', exc_info=True)
         return jsonify({'message': f'Error: {str(e)}'}), 500
     finally:
         cursor.close()
@@ -181,7 +184,7 @@ def update_law(law_id):
             UPDATE Luat
             SET HinhPhatID = %s,
                 NgayApDung = %s
-            WHERE ID = %s
+            WHERE LuatID = %s
         """
         cursor.execute(sql_update, (hinhphat_id, ngay_ap_dung, law_id))
         conn.commit()
@@ -210,6 +213,7 @@ def search():
 
     sql_query = """
         SELECT 
+            luat.LuatID,
             loivipham.NoiDung AS LoiViPham,
             hinhphat.NoiDung AS HinhPhat,
             phuongtien.TenPhuongTien,
@@ -261,6 +265,15 @@ def search():
 @app.route('/js/<path:filename>')
 def serve_js(filename):
     return send_from_directory(os.path.join(app.root_path, 'js'), filename)
+
+# Configure logging
+if not app.debug:
+    handler = RotatingFileHandler('error.log', maxBytes=10000, backupCount=1)
+    handler.setLevel(logging.ERROR)
+    formatter = logging.Formatter(
+        '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]')
+    handler.setFormatter(formatter)
+    app.logger.addHandler(handler)
 
 if __name__ == '__main__':
     app.run(debug=True)
