@@ -2,6 +2,8 @@ from flask import Flask, render_template, request, jsonify, send_from_directory,
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 import mysql.connector
 import os
+from functools import wraps
+import logging
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
@@ -22,9 +24,10 @@ def get_db_connection():
     return mysql.connector.connect(**db_config)
 
 class User(UserMixin):
-    def __init__(self, id, username):
+    def __init__(self, id, username, role):
         self.id = id
         self.username = username
+        self.role = role
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -34,7 +37,7 @@ def load_user(user_id):
     user = cursor.fetchone()
     conn.close()
     if user:
-        return User(user['id'], user['username'])
+        return User(user['id'], user['username'], user['role'])
     return None
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -48,16 +51,18 @@ def login():
         user = cursor.fetchone()
         conn.close()
         if user:
-            login_user(User(user['id'], user['username']))
+            login_user(User(user['id'], user['username'], user['role']))
+            flash('Login successful!', 'success')
             return redirect(url_for('home'))
         else:
-            flash('Invalid username or password')
+            flash('Invalid username or password', 'danger')
     return render_template('login.html')
 
 @app.route('/logout')
 @login_required
 def logout():
     logout_user()
+    flash('You have been logged out.', 'info')
     return redirect(url_for('login'))
 
 @app.route('/')
@@ -65,8 +70,18 @@ def logout():
 def home():
     return render_template('index.html')
 
+def admin_required(f):
+    @wraps(f)
+    @login_required
+    def decorated_function(*args, **kwargs):
+        if current_user.role != 'admin':
+            flash('You do not have permission to perform this action.', 'danger')
+            return redirect(url_for('home'))
+        return f(*args, **kwargs)
+    return decorated_function
+
 @app.route('/add', methods=['POST'])
-@login_required
+@admin_required
 def add_law():
     data = request.get_json()
     dieukhoan = data.get('DieuKhoan')
@@ -105,86 +120,94 @@ def add_law():
         """, (loivipham_id, phuongtien_id, chitietloi_id, hinhphat_id, dieukhoan, ngayapdung))
         
         conn.commit()
-        # Return success response
+        flash('Law added successfully!', 'success')
         return jsonify({'success': True, 'message': 'Law added successfully!'})
     except Exception as e:
         conn.rollback()
+        flash(f'Error: {str(e)}', 'danger')
         return jsonify({'success': False, 'message': f'Error: {str(e)}'}), 500
     finally:
-        # Close the connection
         cursor.close()
         conn.close()
 
-# API route to delete a law
 @app.route('/delete/<int:law_id>', methods=['DELETE'])
-@login_required
+@admin_required
 def delete_law(law_id):
-    # Connect to the database
     conn = mysql.connector.connect(**db_config)
     cursor = conn.cursor()
 
-    # Delete query
-    sql_delete = "DELETE FROM laws WHERE ID = %s"
-    cursor.execute(sql_delete, (law_id,))
-    conn.commit()
+    try:
+        sql_delete = "DELETE FROM laws WHERE ID = %s"
+        cursor.execute(sql_delete, (law_id,))
+        conn.commit()
+        flash('Law deleted successfully!', 'success')
+        return jsonify({'message': 'Law deleted successfully!'})
+    except Exception as e:
+        conn.rollback()
+        flash(f'Error: {str(e)}', 'danger')
+        return jsonify({'message': f'Error: {str(e)}'}), 500
+    finally:
+        cursor.close()
+        conn.close()
 
-    # Close the connection
-    cursor.close()
-    conn.close()
-
-    return jsonify({'message': 'Law deleted successfully!'})
-
-# API route to update a law
 @app.route('/update/<int:law_id>', methods=['PUT'])
-@login_required
+@admin_required
 def update_law(law_id):
     data = request.get_json()
     hinh_phat = data.get('HinhPhat')
     ngay_ap_dung = data.get('NgayApDung')
 
-    # Validate inputs
     if not hinh_phat or not ngay_ap_dung:
+        flash('Hình phạt và Ngày Áp Dụng là bắt buộc!', 'danger')
         return jsonify({'message': 'Hình phạt và Ngày Áp Dụng là bắt buộc!'}), 400
 
-    # Connect to the database
     conn = mysql.connector.connect(**db_config)
     cursor = conn.cursor()
 
     try:
-        # Update query
+        # Check if the new HinhPhat exists
+        cursor.execute("SELECT HinhPhatID FROM HinhPhat WHERE NoiDung = %s", (hinh_phat,))
+        result = cursor.fetchone()
+
+        if result:
+            hinhphat_id = result[0]
+        else:
+            # Insert new HinhPhat and get the new HinhPhatID
+            cursor.execute("INSERT INTO HinhPhat (NoiDung) VALUES (%s)", (hinh_phat,))
+            hinhphat_id = cursor.lastrowid
+
+        # Update the Luat record with the new HinhPhatID and NgayApDung
         sql_update = """
-            UPDATE luat
-            SET HinhPhatID = (SELECT HinhPhatID FROM HinhPhat WHERE NoiDung = %s),
+            UPDATE Luat
+            SET HinhPhatID = %s,
                 NgayApDung = %s
             WHERE ID = %s
         """
-        cursor.execute(sql_update, (hinh_phat, ngay_ap_dung, law_id))
+        cursor.execute(sql_update, (hinhphat_id, ngay_ap_dung, law_id))
         conn.commit()
-
+        flash('Cập nhật luật thành công!', 'success')
         return jsonify({'message': 'Cập nhật luật thành công!'})
     except Exception as e:
         conn.rollback()
+        flash(f'Lỗi: {str(e)}', 'danger')
+        logging.error(f'Error updating law: {str(e)}', exc_info=True)
         return jsonify({'message': f'Lỗi: {str(e)}'}), 500
     finally:
-        # Close the connection
         cursor.close()
         conn.close()
 
 @app.route('/search', methods=['GET'])
 @login_required
 def search():
-    # Get query parameters
     query = request.args.get('query', '').strip().lower()
     vehicle = request.args.get('vehicle', '').strip().lower()
     penalty = request.args.get('penalty', '').strip().lower()
     page = int(request.args.get('page', 1))
-    per_page = int(request.args.get('per_page', 2))  # Set default per_page to 2
+    per_page = int(request.args.get('per_page', 2))
 
-    # Establish database connection
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
 
-    # Construct base SQL query
     sql_query = """
         SELECT 
             loivipham.NoiDung AS LoiViPham,
@@ -217,14 +240,12 @@ def search():
         sql_query += " AND LOWER(hinhphat.NoiDung) LIKE %s COLLATE utf8mb4_unicode_ci"
         params.append(f"%{penalty}%")
 
-    # Add pagination
     sql_query += " LIMIT %s OFFSET %s"
     params.extend([per_page, (page - 1) * per_page])
 
     cursor.execute(sql_query, params)
     laws = cursor.fetchall()
 
-    # Get total count for pagination
     cursor.execute("SELECT COUNT(*) FROM luat")
     total_count = cursor.fetchone()['COUNT(*)']
 

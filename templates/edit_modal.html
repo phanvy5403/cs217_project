@@ -10,32 +10,32 @@
                 <form id="editLawForm">
                     <div class="mb-3">
                         <label for="editDieuKhoan" class="form-label">Điều khoản</label>
-                        <input type="text" class="form-control" id="editDieuKhoan" name="rule" disabled>
+                        <input type="text" class="form-control" id="editDieuKhoan" name="DieuKhoan" disabled>
                     </div>
                     <div class="mb-3">
                         <label for="editLoiViPham" class="form-label">Lỗi Vi Phạm</label>
-                        <input type="text" class="form-control" id="editLoiViPham" name="rule" disabled>
+                        <input type="text" class="form-control" id="editLoiViPham" name="LoiViPham" disabled>
                     </div>
                     <div class="mb-3">
                         <label for="editChiTietLoi" class="form-label">Chi tiết lỗi</label>
-                        <input type="text" class="form-control" id="editChiTietLoi" name="rule" disabled>
+                        <input type="text" class="form-control" id="editChiTietLoi" name="ChiTietLoi" disabled>
                     </div>
                     <div class="mb-3">
                         <label for="editPhuongTien" class="form-label">Loại phương tiện</label>
-                        <select id="editPhuongTien" name="vehicle" class="form-select" disabled>
+                        <select id="editPhuongTien" name="PhuongTien" class="form-select" disabled>
                             <option value="Mô tô, gắn máy">Mô tô, gắn máy</option>
                             <option value="Ô tô">Ô tô</option>
                         </select>
                     </div>
                     <div class="mb-3">
                         <label for="editHinhPhat" class="form-label">Hình phạt</label>
-                        <input type="text" class="form-control" id="editHinhPhat" name="penalty" required>
+                        <input type="text" class="form-control" id="editHinhPhat" name="HinhPhat" required>
                     </div>
                     <div class="mb-3">
                         <label for="editNgayApDung" class="form-label">Ngày Áp Dụng</label>
-                        <input type="date" class="form-control" id="editNgayApDung" name="penalty" required>
+                        <input type="date" class="form-control" id="editNgayApDung" name="NgayApDung" required>
                     </div>
-                    <button type="button" id="saveEditedLawButton" class="btn btn-primary">Cập nhật</button>
+                    <button type="button" id="saveEditedLawButton" class="btn btn-primary w-100" data-law-id="">Cập nhật</button>
                 </form>
             </div>
         </div>

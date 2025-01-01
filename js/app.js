@@ -1,4 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
+    const isAdmin = document.body.getAttribute('data-role') === 'admin';
+
     // Fetch laws based on search parameters
     function fetchLaws(query = '', vehicle = '', penalty = '', page = 1, per_page = 2) {
         const url = `/search?query=${encodeURIComponent(query)}&vehicle=${encodeURIComponent(vehicle)}&penalty=${encodeURIComponent(penalty)}&page=${page}&per_page=${per_page}`;
@@ -9,7 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const tableBody = document.getElementById('lawTableBody');
                 tableBody.innerHTML = '';
                 if (data.laws.length === 0) {
-                    tableBody.insertAdjacentHTML('beforeend', `<tr><td colspan="7" class="text-center">Không tìm thấy dữ liệu</td></tr>`);
+                    tableBody.insertAdjacentHTML('beforeend', `<tr><td colspan="${isAdmin ? 7 : 6}" class="text-center">Không tìm thấy dữ liệu</td></tr>`);
                 } else {
                     data.laws.forEach((law, index) => {
                         const formattedDate = law.NgayApDung
@@ -23,10 +25,10 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <td onclick="showLawDetails(${JSON.stringify(law).replace(/"/g, '&quot;')})">${law.TenPhuongTien || '-'}</td>
                                 <td onclick="showLawDetails(${JSON.stringify(law).replace(/"/g, '&quot;')})">${law.HinhPhat || '-'}</td>
                                 <td onclick="showLawDetails(${JSON.stringify(law).replace(/"/g, '&quot;')})">${formattedDate || '-'}</td>
-                                <td>
+                                ${isAdmin ? `<td>
                                     <button class="btn btn-warning btn-sm me-2" onclick="showEditLawModal(${JSON.stringify(law).replace(/"/g, '&quot;')})">Sửa</button>
-                                    <button class="btn btn-danger btn-sm">Xóa</button>
-                                </td>
+                                    <button class="btn btn-danger btn-sm" onclick="deleteLaw(${law.ID})">Xóa</button>
+                                </td>` : ''}
                             </tr>`;
                         tableBody.insertAdjacentHTML('beforeend', row);
                     });
@@ -38,7 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
             .catch(error => {
                 console.error('Error fetching laws:', error);
                 const tableBody = document.getElementById('lawTableBody');
-                tableBody.innerHTML = `<tr><td colspan="7" class="text-center text-danger">Lỗi khi tải dữ liệu</td></tr>`;
+                tableBody.innerHTML = `<tr><td colspan="${isAdmin ? 7 : 6}" class="text-center text-danger">Lỗi khi tải dữ liệu</td></tr>`;
             });
     }
 
@@ -93,14 +95,36 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Store the law ID for later use
         document.getElementById('saveEditedLawButton').setAttribute('data-law-id', law.ID);
+        console.log('Editing law ID:', law.ID);
 
         const modal = new bootstrap.Modal(document.getElementById('editLawModal'));
         modal.show();
     }
 
+    // Delete law
+    function deleteLaw(lawId) {
+        if (confirm('Bạn có chắc chắn muốn xóa luật này?')) {
+            fetch(`/delete/${lawId}`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' }
+            })
+                .then(response => response.json())
+                .then(result => {
+                    if (result.message === 'Law deleted successfully!') {
+                        alert('Xóa luật thành công!');
+                        fetchLaws(); // Refresh law list
+                    } else {
+                        alert('Không thể xóa luật. Vui lòng thử lại.');
+                    }
+                })
+                .catch(error => console.log('Error deleting law:', error));
+        }
+    }
+
     // Attach functions to the window object
     window.showLawDetails = showLawDetails;
     window.showEditLawModal = showEditLawModal;
+    window.deleteLaw = deleteLaw;
 
     // Event listeners for dynamic search input
     const searchElements = ['searchQuery', 'searchVehicle', 'searchPenalty'];
@@ -150,6 +174,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Save edited law
     document.getElementById('saveEditedLawButton').addEventListener('click', () => {
         const lawId = document.getElementById('saveEditedLawButton').getAttribute('data-law-id');
+        console.log('Saving edited law ID:', lawId);
         const lawData = {
             HinhPhat: document.getElementById('editHinhPhat').value,
             NgayApDung: document.getElementById('editNgayApDung').value,
@@ -160,8 +185,12 @@ document.addEventListener('DOMContentLoaded', () => {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(lawData),
         })
-            .then(response => response.json())
+            .then(response => {
+                console.log('Response status:', response.status);
+                return response.json();
+            })
             .then(result => {
+                console.log('Result:', result);
                 if (result.message === 'Cập nhật luật thành công!') {
                     alert('Cập nhật luật thành công!');
                     const modal = bootstrap.Modal.getInstance(document.getElementById('editLawModal'));
@@ -171,6 +200,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     alert('Không thể cập nhật luật. Vui lòng thử lại.');
                 }
             })
-            .catch(error => console.log('Error editing law:', error));
+            .catch(error => {
+                console.log('Error editing law:', error);
+                alert(`Error editing law: ${error.message}`);
+            });
     });
 });

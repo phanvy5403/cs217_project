@@ -38,3 +38,13 @@ ADD CONSTRAINT unique_noidung UNIQUE (NoiDung(255));
 
 ALTER TABLE HinhPhat
 ADD CONSTRAINT unique_noidung UNIQUE (NoiDung(255));
+
+CREATE TABLE users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(255) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    role VARCHAR(50) NOT NULL DEFAULT 'user'
+);
+
+INSERT INTO users (username, password, role) VALUES ('admin', 'adminpassword','admin');
+INSERT INTO users (username, password) VALUES ('user1', '1234');
