@@ -262,6 +262,81 @@ def search():
         'per_page': per_page
     })
 
+@app.route('/get_penalty', methods=['GET'])
+@login_required
+def get_penalty():
+    violation = request.args.get('violation', '').strip()
+    vehicle = request.args.get('vehicle', '').strip()
+    detail = request.args.get('detail', '').strip()
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    try:
+        sql_query = """
+            SELECT hinhphat.NoiDung AS HinhPhat, luat.DieuKhoan AS DieuKhoan
+            FROM luat
+            JOIN loivipham ON loivipham.LoiViPhamID = luat.LoiViPhamID
+            JOIN phuongtien ON phuongtien.PhuongTienID = luat.PhuongTienID
+            JOIN hinhphat ON hinhphat.HinhPhatID = luat.HinhPhatID
+            LEFT JOIN chitietloi ON chitietloi.ChiTietLoiID = luat.ChiTietLoiID
+            WHERE loivipham.NoiDung = %s AND phuongtien.TenPhuongTien = %s
+        """
+        params = [violation, vehicle]
+
+        if detail:
+            sql_query += " AND chitietloi.NoiDung = %s"
+            params.append(detail)
+
+        cursor.execute(sql_query, params)
+        results = cursor.fetchall()
+
+        if not results:
+            return jsonify({'penalties': [{'HinhPhat': 'Không tìm thấy hình phạt', 'DieuKhoan': 'Không tìm thấy điều khoản'}]})
+
+        penalties = [{'HinhPhat': result['HinhPhat'], 'DieuKhoan': result['DieuKhoan']} for result in results]
+
+        return jsonify({'penalties': penalties})
+    except Exception as e:
+        logging.error(f'Error fetching penalty: {str(e)}', exc_info=True)
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+@app.route('/get_detailed_violations', methods=['GET'])
+@login_required
+def get_detailed_violations():
+    violation = request.args.get('violation', '').strip()
+    vehicle = request.args.get('vehicle', '').strip()
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    try:
+        sql_query = """
+            SELECT DISTINCT chitietloi.NoiDung AS ChiTietLoi
+            FROM luat
+            JOIN loivipham ON loivipham.LoiViPhamID = luat.LoiViPhamID
+            JOIN phuongtien ON phuongtien.PhuongTienID = luat.PhuongTienID
+                LEFT JOIN chitietloi ON chitietloi.ChiTietLoiID = luat.ChiTietLoiID
+            WHERE loivipham.NoiDung = %s AND phuongtien.TenPhuongTien = %s
+        """
+        params = [violation, vehicle]
+
+        cursor.execute(sql_query, params)
+        results = cursor.fetchall()
+
+        detailed_violations = list({result['ChiTietLoi'] for result in results})
+
+        return jsonify({'detailed_violations': detailed_violations})
+    except Exception as e:
+        logging.error(f'Error fetching detailed violations: {str(e)}', exc_info=True)
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
 @app.route('/js/<path:filename>')
 def serve_js(filename):
     return send_from_directory(os.path.join(app.root_path, 'js'), filename)
