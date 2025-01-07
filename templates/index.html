@@ -39,6 +39,12 @@
             border-radius: 5px;
             margin-bottom: 15px;
         }
+        .penalty-item {
+            border: 1px solid #007bff;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
     </style>
 </head>
 
@@ -148,6 +154,13 @@
                 <div id="violation-container">
                     <label for="violation-count">Chọn số lỗi vi phạm:</label>
                     <input type="number" id="violation-count" min="1" value="1" class="form-control mb-3">
+                    <div class="mb-3">
+                        <label for="vehicle" class="form-label">Loại phương tiện</label>
+                        <select id="vehicle" class="form-select">
+                            <option value="Mô tô, gắn máy">Mô tô, gắn máy</option>
+                            <option value="Ô tô">Ô tô</option>
+                        </select>
+                    </div>
                     <div id="violations">
                         <!-- Các lỗi vi phạm sẽ được thêm động tại đây -->
                     </div>
@@ -200,13 +213,6 @@
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label for="vehicle-${i}" class="form-label">Loại phương tiện</label>
-                        <select id="vehicle-${i}" class="form-select vehicle-select" data-index="${i}">
-                            <option value="Mô tô, gắn máy">Mô tô, gắn máy</option>
-                            <option value="Ô tô">Ô tô</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
                         <label for="detail-${i}" class="form-label">Chi tiết lỗi</label>
                         <select id="detail-${i}" class="form-select">
                             <option value="">Chọn chi tiết lỗi</option>
@@ -217,15 +223,42 @@
             }
         });
 
-        // Handle violation and vehicle selection to populate detailed violations
+        // Handle vehicle selection to populate detailed violations
+        document.getElementById('vehicle').addEventListener('change', function() {
+            const vehicle = this.value;
+            const violationSelects = document.querySelectorAll('.violation-select');
+            violationSelects.forEach(select => {
+                const index = select.getAttribute('data-index');
+                const detailSelect = document.getElementById(`detail-${index}`);
+                const violation = select.value;
+
+                if (violation && vehicle) {
+                    // Fetch detailed violations based on selected violation and vehicle
+                    fetch(`/get_detailed_violations?violation=${encodeURIComponent(violation)}&vehicle=${encodeURIComponent(vehicle)}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            detailSelect.innerHTML = '<option value="">Chọn chi tiết lỗi</option>';
+                            data.detailed_violations.forEach(detail => {
+                                detailSelect.innerHTML += `<option value="${detail}">${detail}</option>`;
+                            });
+                        })
+                        .catch(error => {
+                            console.error('Error fetching detailed violations:', error);
+                        });
+                } else {
+                    detailSelect.innerHTML = '<option value="">Chọn chi tiết lỗi</option>';
+                }
+            });
+        });
+
+        // Handle violation selection to populate detailed violations
         document.addEventListener('change', function(event) {
-            if (event.target.classList.contains('violation-select') || event.target.classList.contains('vehicle-select')) {
+            if (event.target.classList.contains('violation-select')) {
                 const index = event.target.getAttribute('data-index');
                 const violationSelect = document.getElementById(`violation-${index}`);
-                const vehicleSelect = document.getElementById(`vehicle-${index}`);
                 const detailSelect = document.getElementById(`detail-${index}`);
                 const violation = violationSelect.value;
-                const vehicle = vehicleSelect.value;
+                const vehicle = document.getElementById('vehicle').value;
 
                 if (violation && vehicle) {
                     // Fetch detailed violations based on selected violation and vehicle
@@ -254,28 +287,44 @@
 
             violationForms.forEach((form, index) => {
                 const violation = form.querySelector(`#violation-${index}`).value;
-                const vehicle = form.querySelector(`#vehicle-${index}`).value;
+                const vehicle = document.getElementById('vehicle').value;
                 const detail = form.querySelector(`#detail-${index}`).value;
 
                 // Fetch penalty based on violation, vehicle, and detail
                 fetch(`/get_penalty?violation=${encodeURIComponent(violation)}&vehicle=${encodeURIComponent(vehicle)}&detail=${encodeURIComponent(detail)}`)
                     .then(response => response.json())
                     .then(data => {
-                        data.penalties.forEach(penaltyData => {
-                            const penalty = penaltyData.HinhPhat || 'Không tìm thấy hình phạt';
-                            const dieu_khoan = penaltyData.DieuKhoan || 'Không tìm thấy điều khoản';
+                        if (data.penalties.length > 0) {
                             const penaltyItem = document.createElement('div');
                             penaltyItem.className = 'penalty-item';
                             penaltyItem.innerHTML = `
                                 <p><strong>Lỗi Vi Phạm:</strong> ${violation}</p>
                                 <p><strong>Loại phương tiện:</strong> ${vehicle}</p>
                                 <p><strong>Chi tiết lỗi:</strong> ${detail}</p>
-                                <p><strong>Hình phạt:</strong> ${penalty}</p>
-                                <p><strong>Điều khoản:</strong> ${dieu_khoan}</p>
+                            `;
+                            data.penalties.forEach(penaltyData => {
+                                const penalty = penaltyData.HinhPhat || 'Không tìm thấy hình phạt';
+                                const dieu_khoan = penaltyData.DieuKhoan || 'Không tìm thấy điều khoản';
+                                penaltyItem.innerHTML += `
+                                    <p><strong>Hình phạt:</strong> ${penalty}</p>
+                                    <p><strong>Điều khoản:</strong> ${dieu_khoan}</p>
+                                    <hr>
+                                `;
+                            });
+                            penaltiesContainer.appendChild(penaltyItem);
+                        } else {
+                            const penaltyItem = document.createElement('div');
+                            penaltyItem.className = 'penalty-item';
+                            penaltyItem.innerHTML = `
+                                <p><strong>Lỗi Vi Phạm:</strong> ${violation}</p>
+                                <p><strong>Loại phương tiện:</strong> ${vehicle}</p>
+                                <p><strong>Chi tiết lỗi:</strong> ${detail}</p>
+                                <p><strong>Hình phạt:</strong> Không tìm thấy hình phạt</p>
+                                <p><strong>Điều khoản:</strong> Không tìm thấy điều khoản</p>
                                 <hr>
                             `;
                             penaltiesContainer.appendChild(penaltyItem);
-                        });
+                        }
                     })
                     .catch(error => {
                         console.error('Error fetching penalty:', error);

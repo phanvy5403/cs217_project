@@ -4,7 +4,7 @@ import mysql.connector
 import os
 from functools import wraps
 import logging
-from logging.handlers import RotatingFileHandler  # Add this import
+from logging.handlers import RotatingFileHandler  
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
