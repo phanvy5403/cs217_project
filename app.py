@@ -88,19 +88,27 @@ def add_law():
     data = request.get_json()
     dieukhoan = data.get('DieuKhoan')
     hinhphat = data.get('HinhPhat')
-    phuongtien = data.get('PhuongTien')
+    phuongtien = data.get('TenPhuongTien')
     loivipham = data.get('LoiViPham')
     chitietloi = data.get('ChiTietLoi')
     ngayapdung = data.get('NgayApDung')
+
+
     conn = mysql.connector.connect(**db_config)
     cursor = conn.cursor()
 
     try:
         cursor.execute("SELECT PhuongTienID from PhuongTien WHERE TenPhuongTien = %s", (phuongtien,))
-        phuongtien_id = cursor.fetchone()[0]
+        phuongtien_result = cursor.fetchone()
+        if not phuongtien_result:
+            raise ValueError(f"Phương tiện '{phuongtien}' không tồn tại")
+        phuongtien_id = phuongtien_result[0]
 
         cursor.execute("SELECT LoiViPhamID from LoiViPham WHERE LoiViPham.NoiDung = %s", (loivipham,))
-        loivipham_id = cursor.fetchone()[0]
+        loivipham_result = cursor.fetchone()
+        if not loivipham_result:
+            raise ValueError(f"Lỗi vi phạm '{loivipham}' không tồn tại")
+        loivipham_id = loivipham_result[0]
 
         if chitietloi:
             cursor.execute("SELECT ChiTietLoiID FROM ChiTietLoi WHERE NoiDung = %s", (chitietloi,))
@@ -113,8 +121,14 @@ def add_law():
         else:
             chitietloi_id = None
 
-        cursor.execute("INSERT INTO HinhPhat (NoiDung) VALUES (%s)", (hinhphat,))
-        hinhphat_id = cursor.lastrowid
+        if hinhphat:
+            cursor.execute("SELECT HinhPhatID FROM HinhPhat WHERE NoiDung = %s", (hinhphat,))
+            result = cursor.fetchone()
+            if result:
+                hinhphat_id = result[0]
+            else:
+                cursor.execute("INSERT INTO HinhPhat (NoiDung) VALUES (%s)", (hinhphat,))
+                hinhphat_id = cursor.lastrowid
 
         cursor.execute("""
             INSERT INTO Luat (LoiViPhamID, PhuongTienID, ChiTietLoiID, HinhPhatID, DieuKhoan, NgayApDung)
@@ -124,10 +138,21 @@ def add_law():
         conn.commit()
         flash('Law added successfully!', 'success')
         return jsonify({'success': True, 'message': 'Law added successfully!'})
+    except mysql.connector.Error as err:
+        conn.rollback()
+        error_message = f"Error: {err.msg}"
+        flash(error_message, 'danger')
+        return jsonify({'success': False, 'message': error_message}), 500
+    except ValueError as ve:
+        conn.rollback()
+        error_message = f"Validation error: {str(ve)}"
+        flash(error_message, 'danger')
+        return jsonify({'success': False, 'message': error_message}), 400
     except Exception as e:
         conn.rollback()
-        flash(f'Error: {str(e)}', 'danger')
-        return jsonify({'success': False, 'message': f'Error: {str(e)}'}), 500
+        error_message = f"Unexpected error: {str(e)}"
+        flash(error_message, 'danger')
+        return jsonify({'success': False, 'message': error_message}), 500
     finally:
         cursor.close()
         conn.close()

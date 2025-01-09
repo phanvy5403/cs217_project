@@ -22,7 +22,7 @@ CREATE TABLE Luat (
     PhuongTienID INT,
     ChiTietLoiID INT,
     HinhPhatID INT,
-    DieuKhoan  NVARCHAR(100) NOT NULL,
+    DieuKhoan  NVARCHAR(255) NOT NULL,
     NgayApDung DATE,
     FOREIGN KEY (LoiViPhamID) REFERENCES loivipham(LoiViPhamID),
     FOREIGN KEY (PhuongTienID) REFERENCES PhuongTien(PhuongTienID),

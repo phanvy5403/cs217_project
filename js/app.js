@@ -89,9 +89,24 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('editDieuKhoan').value = law.DieuKhoan || '';
         document.getElementById('editLoiViPham').value = law.LoiViPham || '';
         document.getElementById('editChiTietLoi').value = law.ChiTietLoi || '';
-        document.getElementById('editPhuongTien').value = law.TenPhuongTien || 'Mô tô, gắn máy';
         document.getElementById('editHinhPhat').value = law.HinhPhat || '';
         document.getElementById('editNgayApDung').value = law.NgayApDung || '';
+
+        // Load PhuongTien options from the database
+        fetch('/get_phuongtien')
+            .then(response => response.json())
+            .then(data => {
+                const phuongTienSelect = document.getElementById('editPhuongTien');
+                phuongTienSelect.innerHTML = ''; // Clear existing options
+                data.phuongtien.forEach(phuongTien => {
+                    const option = document.createElement('option');
+                    option.value = phuongTien;
+                    option.textContent = phuongTien;
+                    phuongTienSelect.appendChild(option);
+                });
+                phuongTienSelect.value = law.TenPhuongTien || 'Mô tô, gắn máy';
+            })
+            .catch(error => console.error('Error fetching PhuongTien:', error));
 
         // Store the law ID for later use
         document.getElementById('saveEditedLawButton').setAttribute('data-law-id', law.LuatID);
@@ -225,6 +240,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const lawId = document.getElementById('saveEditedLawButton').getAttribute('data-law-id');
         console.log('Saving edited law ID:', lawId);
         const lawData = {
+            DieuKhoan: document.getElementById('editDieuKhoan').value,
             HinhPhat: document.getElementById('editHinhPhat').value,
             NgayApDung: document.getElementById('editNgayApDung').value,
         };
@@ -337,6 +353,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const index = select.getAttribute('data-index');
             const detailSelect = document.getElementById(`detail-${index}`);
             const violation = select.value;
+            
+            console.log('Vehicle:', vehicle);
+            console.log('Violations:', violation);
 
             if (violation && vehicle) {
                 // Fetch detailed violations based on selected violation and vehicle

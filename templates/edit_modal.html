@@ -10,7 +10,7 @@
                 <form id="editLawForm">
                     <div class="mb-3">
                         <label for="editDieuKhoan" class="form-label">Điều khoản</label>
-                        <input type="text" class="form-control" id="editDieuKhoan" name="DieuKhoan" disabled>
+                        <input type="text" class="form-control" id="editDieuKhoan" name="DieuKhoan" required>
                     </div>
                     <div class="mb-3">
                         <label for="editLoiViPham" class="form-label">Lỗi Vi Phạm</label>
@@ -23,8 +23,7 @@
                     <div class="mb-3">
                         <label for="editPhuongTien" class="form-label">Loại phương tiện</label>
                         <select id="editPhuongTien" name="PhuongTien" class="form-select" disabled>
-                            <option value="Mô tô, gắn máy">Mô tô, gắn máy</option>
-                            <option value="Ô tô">Ô tô</option>
+                            <!-- Options will be loaded dynamically -->
                         </select>
                     </div>
                     <div class="mb-3">
