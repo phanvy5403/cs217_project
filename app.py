@@ -88,7 +88,7 @@ def add_law():
     data = request.get_json()
     dieukhoan = data.get('DieuKhoan')
     hinhphat = data.get('HinhPhat')
-    phuongtien = data.get('TenPhuongTien')
+    phuongtien = data.get('PhuongTien')
     loivipham = data.get('LoiViPham')
     chitietloi = data.get('ChiTietLoi')
     ngayapdung = data.get('NgayApDung')
@@ -206,7 +206,7 @@ def search():
     vehicle = request.args.get('vehicle', '').strip().lower()
     penalty = request.args.get('penalty', '').strip().lower()
     page = int(request.args.get('page', 1))
-    per_page = int(request.args.get('per_page', 2))
+    per_page = 10  # Update to 10 records per page
 
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
@@ -228,7 +228,7 @@ def search():
             hinhphat ON hinhphat.HinhPhatID = luat.HinhPhatID
         JOIN 
             phuongtien ON phuongtien.PhuongTienID = luat.PhuongTienID
-        JOIN 
+        LEFT JOIN 
             chitietloi ON chitietloi.ChiTietLoiID = luat.ChiTietLoiID
         WHERE 
             LOWER(loivipham.NoiDung) LIKE %s COLLATE utf8mb4_unicode_ci
@@ -279,14 +279,20 @@ def get_penalty():
             JOIN loivipham ON loivipham.LoiViPhamID = luat.LoiViPhamID
             JOIN phuongtien ON phuongtien.PhuongTienID = luat.PhuongTienID
             JOIN hinhphat ON hinhphat.HinhPhatID = luat.HinhPhatID
-            LEFT JOIN chitietloi ON chitietloi.ChiTietLoiID = luat.ChiTietLoiID
-            WHERE loivipham.NoiDung = %s AND phuongtien.TenPhuongTien = %s
         """
         params = [violation, vehicle]
 
-        if detail:
-            sql_query += " AND chitietloi.NoiDung = %s"
+        if detail and detail != "null":
+            sql_query += """
+                JOIN chitietloi ON chitietloi.ChiTietLoiID = luat.ChiTietLoiID
+                WHERE loivipham.NoiDung = %s AND phuongtien.TenPhuongTien = %s AND chitietloi.NoiDung = %s
+            """
             params.append(detail)
+        else:
+            sql_query += """
+                LEFT JOIN chitietloi ON chitietloi.ChiTietLoiID = luat.ChiTietLoiID
+                WHERE loivipham.NoiDung = %s AND phuongtien.TenPhuongTien = %s AND luat.ChiTietLoiID IS NULL
+            """
 
         cursor.execute(sql_query, params)
         results = cursor.fetchall()
@@ -319,7 +325,7 @@ def get_detailed_violations():
             FROM luat
             JOIN loivipham ON loivipham.LoiViPhamID = luat.LoiViPhamID
             JOIN phuongtien ON phuongtien.PhuongTienID = luat.PhuongTienID
-                LEFT JOIN chitietloi ON chitietloi.ChiTietLoiID = luat.ChiTietLoiID
+            LEFT JOIN chitietloi ON chitietloi.ChiTietLoiID = luat.ChiTietLoiID
             WHERE loivipham.NoiDung = %s AND phuongtien.TenPhuongTien = %s
         """
         params = [violation, vehicle]
@@ -327,11 +333,47 @@ def get_detailed_violations():
         cursor.execute(sql_query, params)
         results = cursor.fetchall()
 
-        detailed_violations = list({result['ChiTietLoi'] for result in results})
+        detailed_violations = list({result['ChiTietLoi'] for result in results if result['ChiTietLoi'] is not None})
 
         return jsonify({'detailed_violations': detailed_violations})
     except Exception as e:
         logging.error(f'Error fetching detailed violations: {str(e)}', exc_info=True)
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+@app.route('/get_loivipham', methods=['GET'])
+@login_required
+def get_loivipham():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    try:
+        cursor.execute("SELECT NoiDung FROM LoiViPham")
+        results = cursor.fetchall()
+        loivipham = [result['NoiDung'] for result in results]
+        return jsonify({'loivipham': loivipham})
+    except Exception as e:
+        logging.error(f'Error fetching LoiViPham: {str(e)}', exc_info=True)
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+@app.route('/get_phuongtien', methods=['GET'])
+@login_required
+def get_phuongtien():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    try:
+        cursor.execute("SELECT TenPhuongTien FROM PhuongTien")
+        results = cursor.fetchall()
+        phuongtien = [result['TenPhuongTien'] for result in results]
+        return jsonify({'phuongtien': phuongtien})
+    except Exception as e:
+        logging.error(f'Error fetching PhuongTien: {str(e)}', exc_info=True)
         return jsonify({'error': str(e)}), 500
     finally:
         cursor.close()

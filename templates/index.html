@@ -156,9 +156,8 @@
                     <input type="number" id="violation-count" min="1" value="1" class="form-control mb-3">
                     <div class="mb-3">
                         <label for="vehicle" class="form-label">Loại phương tiện</label>
-                        <select id="vehicle" class="form-select">
-                            <option value="Mô tô, gắn máy">Mô tô, gắn máy</option>
-                            <option value="Ô tô">Ô tô</option>
+                        <select id="vehicle" class="form-select" required>
+                            <option value="">Chọn loại phương tiện</option>
                         </select>
                     </div>
                     <div id="violations">
@@ -202,25 +201,36 @@
                 violationForm.innerHTML = `
                     <div class="mb-3">
                         <label for="violation-${i}" class="form-label">Lỗi Vi Phạm</label>
-                        <select id="violation-${i}" class="form-select violation-select" data-index="${i}">
+                        <select id="violation-${i}" class="form-select violation-select" data-index="${i}" required>
                             <option value="">Chọn lỗi vi phạm</option>
-                            <option value="Lỗi chạy quá tốc độ quy định">Lỗi chạy quá tốc độ quy định</option>
-                            <option value="Lỗi đi không đúng làn đường">Lỗi đi không đúng làn đường</option>
-                            <option value="Lỗi về giấy tờ xe">Lỗi về giấy tờ xe</option>
-                            <option value="Lỗi đỗ xe, dừng xe sai quy định">Lỗi đỗ xe, dừng xe sai quy định</option>
-                            <option value="Lỗi sử dụng còi xe sai quy định">Lỗi sử dụng còi xe sai quy định</option>
-                            <option value="Lỗi về vi phạm nồng độ cồn">Lỗi về vi phạm nồng độ cồn</option>
                         </select>
                     </div>
                     <div class="mb-3">
                         <label for="detail-${i}" class="form-label">Chi tiết lỗi</label>
-                        <select id="detail-${i}" class="form-select">
+                        <select id="detail-${i}" class="form-select" required>
                             <option value="">Chọn chi tiết lỗi</option>
+                            <option value="null">Không</option>
                         </select>
                     </div>
                 `;
                 violationsContainer.appendChild(violationForm);
             }
+
+            // Fetch LoiViPham options for each violation form
+            fetch('/get_loivipham')
+                .then(response => response.json())
+                .then(data => {
+                    const violationSelects = document.querySelectorAll('.violation-select');
+                    violationSelects.forEach(select => {
+                        data.loivipham.forEach(loiViPham => {
+                            const option = document.createElement('option');
+                            option.value = loiViPham;
+                            option.textContent = loiViPham;
+                            select.appendChild(option);
+                        });
+                    });
+                })
+                .catch(error => console.error('Error fetching LoiViPham:', error));
         });
 
         // Handle vehicle selection to populate detailed violations
@@ -238,6 +248,7 @@
                         .then(response => response.json())
                         .then(data => {
                             detailSelect.innerHTML = '<option value="">Chọn chi tiết lỗi</option>';
+                            detailSelect.innerHTML += '<option value="Không">Không</option>';
                             data.detailed_violations.forEach(detail => {
                                 detailSelect.innerHTML += `<option value="${detail}">${detail}</option>`;
                             });
@@ -247,6 +258,7 @@
                         });
                 } else {
                     detailSelect.innerHTML = '<option value="">Chọn chi tiết lỗi</option>';
+                    detailSelect.innerHTML += '<option value="Không">Không</option>';
                 }
             });
         });
@@ -266,6 +278,7 @@
                         .then(response => response.json())
                         .then(data => {
                             detailSelect.innerHTML = '<option value="">Chọn chi tiết lỗi</option>';
+                            detailSelect.innerHTML += '<option value="Không">Không</option>';
                             data.detailed_violations.forEach(detail => {
                                 detailSelect.innerHTML += `<option value="${detail}">${detail}</option>`;
                             });
@@ -275,6 +288,7 @@
                         });
                 } else {
                     detailSelect.innerHTML = '<option value="">Chọn chi tiết lỗi</option>';
+                    detailSelect.innerHTML += '<option value="Không">Không</option>';
                 }
             }
         });
@@ -331,6 +345,20 @@
                     });
             });
         });
+
+        // Fetch PhuongTien options for the vehicle combobox
+        fetch('/get_phuongtien')
+            .then(response => response.json())
+            .then(data => {
+                const phuongTienSelect = document.getElementById('vehicle');
+                data.phuongtien.forEach(phuongTien => {
+                    const option = document.createElement('option');
+                    option.value = phuongTien;
+                    option.textContent = phuongTien;
+                    phuongTienSelect.appendChild(option);
+                });
+            })
+            .catch(error => console.error('Error fetching PhuongTien:', error));
 
         // Trigger the input event to generate the initial form
         document.getElementById('violation-count').dispatchEvent(new Event('input'));
