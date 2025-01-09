@@ -1,0 +1,50 @@
+<!-- Add Law Modal -->
+<div class="modal fade" id="addLawModal" tabindex="-1" aria-labelledby="addLawModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addLawModalLabel">Thêm luật mới</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addLawForm">
+                    <div class="mb-3">
+                        <label for="rule" class="form-label">Điều khoản</label>
+                        <input type="text" class="form-control" id="DieuKhoan" name="rule" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="rule" class="form-label">Lỗi Vi Phạm</label>
+                        <select id="LoiViPham" class="form-select" name="loivipham">
+                            <option value="Lỗi chạy quá tốc độ quy định">Lỗi chạy quá tốc độ quy định</option>
+                            <option value="Lỗi đi không đúng làn đường">Lỗi đi không đúng làn đường</option>
+                            <option value="Lỗi về giấy tờ xe">Lỗi về giấy tờ xe </option>
+                            <option value="Lỗi đỗ xe,dừng xe sai quy định">Lỗi đỗ xe,dừng xe sai quy định</option>
+                            <option value="Lỗi sử dụng còi xe sai quy định">Lỗi sử dụng còi xe sai quy định</option>
+                            <option value="Lỗi về vi phạm nồng độ cồn">Lỗi về vi phạm nồng độ cồn </option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="rule" class="form-label">Chi tiết lỗi</label>
+                        <input type="text" class="form-control" id="ChiTietLoi" name="rule" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="vehicle" class="form-label">Loại phương tiện</label>
+                        <select id="PhuongTien" name="vehicle" class="form-select" required>
+                            <option value="Mô tô, gắn máy">Mô tô, gắn máy</option>
+                            <option value="Ô tô">Ô tô</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="penalty" class="form-label">Hình phạt</label>
+                        <input type="text" class="form-control" id="HinhPhat" name="penalty" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="penalty" class="form-label">Ngày Áp Dụng</label>
+                        <input type="date" class="form-control" id="NgayApDung" name="penalty" required>
+                    </div>
+                    <button type="button" id="saveLawButton" class="btn btn-primary">Thêm</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

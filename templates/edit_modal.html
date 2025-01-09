@@ -1,0 +1,40 @@
+<!-- Edit Law Modal -->
+<div class="modal fade" id="editLawModal" tabindex="-1" aria-labelledby="editLawModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editLawModalLabel">Chỉnh sửa luật</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editLawForm">
+                    <div class="mb-3">
+                        <label for="editDieuKhoan" class="form-label">Điều khoản</label>
+                        <input type="text" class="form-control" id="editDieuKhoan" name="DieuKhoan" disabled>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editLoiViPham" class="form-label">Lỗi Vi Phạm</label>
+                        <input type="text" class="form-control" id="editLoiViPham" name="LoiViPham" disabled>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editChiTietLoi" class="form-label">Chi tiết lỗi</label>
+                        <input type="text" class="form-control" id="editChiTietLoi" name="ChiTietLoi" disabled>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editPhuongTien" class="form-label">Loại phương tiện</label>
+                        <input type="text" class="form-control" id="editPhuongTien" name="PhuongTien" disabled>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editHinhPhat" class="form-label">Hình phạt</label>
+                        <input type="text" class="form-control" id="editHinhPhat" name="HinhPhat" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editNgayApDung" class="form-label">Ngày Áp Dụng</label>
+                        <input type="date" class="form-control" id="editNgayApDung" name="NgayApDung" required>
+                    </div>
+                    <button type="button" id="saveEditedLawButton" class="btn btn-primary w-100" data-law-id="">Cập nhật</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

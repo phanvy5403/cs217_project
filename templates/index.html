@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tra cứu Luật Giao Thông</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .container {
+            margin-top: 50px;
+        }
+        .nav-tabs .nav-link {
+            color: #495057;
+        }
+        .nav-tabs .nav-link.active {
+            color: #fff;
+            background-color: #007bff;
+        }
+        .table thead th {
+            background-color: #007bff;
+            color: #fff;
+        }
+        .modal-header {
+            background-color: #007bff;
+            color: #fff;
+        }
+        .btn-primary {
+            background-color: #007bff;
+            border-color: #007bff;
+        }
+        .btn-primary:hover {
+            background-color: #0056b3;
+            border-color: #0056b3;
+        }
+        .violation-form {
+            border: 1px solid #007bff;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+        .penalty-item {
+            border: 1px solid #007bff;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+
+<body data-role="{{ current_user.role }}">
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">Tra cứu Luật Giao Thông</a>
+            <div class="collapse navbar-collapse justify-content-end">
+                <ul class="navbar-nav">
+                    {% if current_user.is_authenticated %}
+                        <li class="nav-item">
+                            <span class="nav-link">{{ current_user.username }}</span>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/logout" class="btn btn-danger">Logout</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="mt-3">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <ul class="nav nav-tabs" id="lawTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="tra-cuu-tab" data-bs-toggle="tab" data-bs-target="#tra-cuu"
+                    type="button" role="tab" aria-controls="tra-cuu" aria-selected="true">
+                    Tra cứu luật
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="crud-tab" data-bs-toggle="tab" data-bs-target="#crud" type="button"
+                    role="tab" aria-controls="crud" aria-selected="false">
+                    Hệ thống xử phạt
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="lawTabsContent">
+
+            <!-- Law Search Tab -->
+            <div class="tab-pane fade show active" id="tra-cuu" role="tabpanel" aria-labelledby="tra-cuu-tab">
+                <h2 class="text-center my-4"></h2>
+                {% if current_user.role == 'admin' %}
+                    <button class="btn btn-success mb-3" data-bs-toggle="modal" data-bs-target="#addLawModal">Thêm luật</button>
+                {% endif %}
+
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <input type="text" id="searchQuery" class="form-control" placeholder="Tìm theo lỗi vi phạm...">
+                    </div>
+                    <div class="col-md-4">
+                        <select id="searchVehicle" class="form-select">
+                            <option value="">Loading...</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <input type="text" id="searchPenalty" class="form-control" placeholder="Tìm theo hình phạt...">
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table id="lawTable" class="table table-bordered table-hover">
+                        <thead class="table-primary">
+                            <tr>
+                                <th>ID</th>
+                                <th>Loại vi phạm</th>
+                                <th>Nội dung</th>
+                                <th>Phương tiện</th>
+                                <th>Hình phạt</th>
+                                <th>Ngày Áp Dụng</th>
+                                {% if current_user.role == 'admin' %}
+                                    <th>Cập nhật</th>
+                                {% endif %}
+                            </tr>
+                        </thead>
+                        <tbody id="lawTableBody">
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination controls -->
+                <nav aria-label="Page navigation">
+                    <ul class="pagination justify-content-center" id="pagination">
+                        <!-- Pagination items will be dynamically added here -->
+                    </ul>
+                </nav>
+            </div>
+
+            <!-- Law Management Tab -->
+            <div class="tab-pane fade" id="crud" role="tabpanel" aria-labelledby="crud-tab">
+                <div id="violation-container">
+                    <label for="violation-count">Chọn số lỗi vi phạm:</label>
+                    <input type="number" id="violation-count" min="1" value="1" class="form-control mb-3">
+                    <div class="mb-3">
+                        <label for="vehicle" class="form-label">Loại phương tiện</label>
+                        <select id="vehicle" class="form-select">
+                            <option value="">Loading...</option>
+                        </select>
+                    </div>
+                    <div id="violations">
+                        <!-- Các lỗi vi phạm sẽ được thêm động tại đây -->
+                    </div>
+                    <button id="calculate-penalty" class="btn btn-primary">Hiển thị hình phạt</button>
+                </div>
+                <div id="penalties" class="mt-4">
+                    <!-- Penalties will be displayed here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% include 'add_modal.html' %}
+    {% include 'edit_modal.html' %}
+    {% include 'detail_modal.html' %}
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="/js/app.js"></script>
+    <script>
+        // Automatically close alerts after 5 seconds
+        setTimeout(() => {
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(alert => {
+                const bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
+            });
+        }, 5000);
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const vehicleSelect = document.getElementById('searchVehicle');
+
+            // Fetch vehicle types from the backend
+            fetch('/get_vehicle_types')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.vehicle_types) {
+                        vehicleSelect.innerHTML = '<option value="">Chọn loại phương tiện</option>'; // Default option
+                        data.vehicle_types.forEach(vehicle => {
+                            vehicleSelect.innerHTML += `<option value="${vehicle}">${vehicle}</option>`;
+                        });
+                    } else {
+                        vehicleSelect.innerHTML = '<option value="">No options available</option>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching vehicle types:', error);
+                    vehicleSelect.innerHTML = '<option value="">Error loading options</option>';
+                });
+        });
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const vehicleSelect = document.getElementById('vehicle');
+
+            // Fetch vehicle types from the backend
+            fetch('/get_vehicle_types')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.vehicle_types) {
+                        vehicleSelect.innerHTML = '<option value="">Chọn loại phương tiện</option>'; // Default option
+                        data.vehicle_types.forEach(vehicle => {
+                            vehicleSelect.innerHTML += `<option value="${vehicle}">${vehicle}</option>`;
+                        });
+                    } else {
+                        vehicleSelect.innerHTML = '<option value="">No options available</option>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching vehicle types:', error);
+                    vehicleSelect.innerHTML = '<option value="">Error loading options</option>';
+                });
+        });
+
+
+
+        // Handle dynamic violation forms
+        document.getElementById('violation-count').addEventListener('input', function() {
+            const count = parseInt(this.value);
+            const violationsContainer = document.getElementById('violations');
+            violationsContainer.innerHTML = '';
+
+            for (let i = 0; i < count; i++) {
+                const violationForm = document.createElement('div');
+                violationForm.className = 'violation-form mb-3';
+                violationForm.innerHTML = `
+                    <div class="mb-3">
+                        <label for="violation-${i}" class="form-label">Lỗi Vi Phạm</label>
+                        <select id="violation-${i}" class="form-select violation-select" data-index="${i}">
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="detail-${i}" class="form-label">Chi tiết lỗi</label>
+                        <select id="detail-${i}" class="form-select">
+                            <option value="">Chọn chi tiết lỗi</option>
+                        </select>
+                    </div>
+                `;
+                // Add event listener for "violation-select"
+                violationsContainer.appendChild(violationForm);
+            }
+        });
+        document.addEventListener('DOMContentLoaded', function () {
+            const vehicleSelect = document.getElementById('vehicle');
+
+            const violationSelects = document.querySelectorAll('.violation-select');
+            violationSelects.forEach(select => {
+                const index = select.getAttribute('data-index');
+                const detailSelect = document.getElementById(`violation-${index}`);
+
+                detailSelect.innerHTML = '<option value="">Loading...</option>';
+
+                // Fetch detailed violations from backend
+                fetch(`/get_violations`)
+                    .then(response => response.json())
+                    .then(data => {
+                        detailSelect.innerHTML = '<option value="">Chọn lỗi vi phạm</option>';
+                        if (data.violation_types && data.violation_types.length > 0) {
+                            data.violation_types.forEach(detail => {
+                                const option = document.createElement('option');
+                                option.value = detail;
+                                option.textContent = detail;
+                                detailSelect.appendChild(option);
+                            });
+                        } else {
+                            detailSelect.innerHTML = '<option value="">Không có chi tiết lỗi</option>';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching detailed violations:', error);
+                        detailSelect.innerHTML = '<option value="">Error loading details</option>';
+                    });
+            });
+        });
+
+        // Handle vehicle selection to populate detailed violations
+        document.getElementById('vehicle').addEventListener('change', function() {
+            const vehicle = this.value;
+            const violationSelects = document.querySelectorAll('.violation-select');
+            violationSelects.forEach(select => {
+                const index = select.getAttribute('data-index');
+                const detailSelect = document.getElementById(`detail-${index}`);
+                const violation = select.value;
+
+                if (violation && vehicle) {
+                    // Fetch detailed violations based on selected violation and vehicle
+                    fetch(`/get_detailed_violations?violation=${encodeURIComponent(violation)}&vehicle=${encodeURIComponent(vehicle)}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            detailSelect.innerHTML = '<option value="">Chọn chi tiết lỗi</option>';
+                            data.detailed_violations.forEach(detail => {
+                                detailSelect.innerHTML += `<option value="${detail}">${detail}</option>`;
+                            });
+                        })
+                        .catch(error => {
+                            console.error('Error fetching detailed violations:', error);
+                        });
+                } else {
+                    detailSelect.innerHTML = '<option value="">Chọn chi tiết lỗi</option>';
+                }
+            });
+        });
+
+        // Handle violation selection to populate detailed violations
+        document.addEventListener('change', function(event) {
+            if (event.target.classList.contains('violation-select')) {
+                const index = event.target.getAttribute('data-index');
+                const violationSelect = document.getElementById(`violation-${index}`);
+                const detailSelect = document.getElementById(`detail-${index}`);
+                const violation = violationSelect.value;
+                const vehicle = document.getElementById('vehicle').value;
+
+                if (violation && vehicle) {
+                    // Fetch detailed violations based on selected violation and vehicle
+                    fetch(`/get_detailed_violations?violation=${encodeURIComponent(violation)}&vehicle=${encodeURIComponent(vehicle)}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            detailSelect.innerHTML = '<option value="">Chọn chi tiết lỗi</option>';
+                            data.detailed_violations.forEach(detail => {
+                                detailSelect.innerHTML += `<option value="${detail}">${detail}</option>`;
+                            });
+                        })
+                        .catch(error => {
+                            console.error('Error fetching detailed violations:', error);
+                        });
+                } else {
+                    detailSelect.innerHTML = '<option value="">Chọn chi tiết lỗi</option>';
+                }
+            }
+        });
+
+        // Handle calculate penalty button click
+        document.getElementById('calculate-penalty').addEventListener('click', function() {
+            const violationForms = document.querySelectorAll('.violation-form');
+            const penaltiesContainer = document.getElementById('penalties');
+            penaltiesContainer.innerHTML = '';
+
+            violationForms.forEach((form, index) => {
+                const violation = form.querySelector(`#violation-${index}`).value;
+                const vehicle = document.getElementById('vehicle').value;
+                const detail = form.querySelector(`#detail-${index}`).value;
+
+                // Fetch penalty based on violation, vehicle, and detail
+                fetch(`/get_penalty?violation=${encodeURIComponent(violation)}&vehicle=${encodeURIComponent(vehicle)}&detail=${encodeURIComponent(detail)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.penalties.length > 0) {
+                            const penaltyItem = document.createElement('div');
+                            penaltyItem.className = 'penalty-item';
+                            penaltyItem.innerHTML = `
+                                <p><strong>Lỗi Vi Phạm:</strong> ${violation}</p>
+                                <p><strong>Loại phương tiện:</strong> ${vehicle}</p>
+                                <p><strong>Chi tiết lỗi:</strong> ${detail}</p>
+                            `;
+                            data.penalties.forEach(penaltyData => {
+                                const penalty = penaltyData.HinhPhat || 'Không tìm thấy hình phạt';
+                                const dieu_khoan = penaltyData.DieuKhoan || 'Không tìm thấy điều khoản';
+                                penaltyItem.innerHTML += `
+                                    <p><strong>Hình phạt:</strong> ${penalty}</p>
+                                    <p><strong>Điều khoản:</strong> ${dieu_khoan}</p>
+                                    <hr>
+                                `;
+                            });
+                            penaltiesContainer.appendChild(penaltyItem);
+                        } else {
+                            const penaltyItem = document.createElement('div');
+                            penaltyItem.className = 'penalty-item';
+                            penaltyItem.innerHTML = `
+                                <p><strong>Lỗi Vi Phạm:</strong> ${violation}</p>
+                                <p><strong>Loại phương tiện:</strong> ${vehicle}</p>
+                                <p><strong>Chi tiết lỗi:</strong> ${detail}</p>
+                                <p><strong>Hình phạt:</strong> Không tìm thấy hình phạt</p>
+                                <p><strong>Điều khoản:</strong> Không tìm thấy điều khoản</p>
+                                <hr>
+                            `;
+                            penaltiesContainer.appendChild(penaltyItem);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching penalty:', error);
+                    });
+            });
+        });
+
+        // Trigger the input event to generate the initial form
+        document.getElementById('violation-count').dispatchEvent(new Event('input'));
+    </script>
+</body>
+
+</html>
