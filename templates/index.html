@@ -257,38 +257,46 @@
                 `;
                 // Add event listener for "violation-select"
                 violationsContainer.appendChild(violationForm);
+
+
+                // Populate the violation-select for this new element
+                const violationSelect = violationForm.querySelector(`#violation-${i}`);
+                populateViolationSelect(violationSelect);
             }
         });
+        // Function to populate violation-select options
+        function populateViolationSelect(selectElement) {
+            selectElement.innerHTML = '<option value="">Loading...</option>';
+
+            // Fetch violation types from backend
+            fetch(`/get_violations`)
+                .then(response => response.json())
+                .then(data => {
+                    selectElement.innerHTML = '<option value="">Chọn lỗi vi phạm</option>';
+                    if (data.violation_types && data.violation_types.length > 0) {
+                        data.violation_types.forEach(detail => {
+                            const option = document.createElement('option');
+                            option.value = detail;
+                            option.textContent = detail;
+                            selectElement.appendChild(option);
+                        });
+                    } else {
+                        selectElement.innerHTML = '<option value="">Không có chi tiết lỗi</option>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching detailed violations:', error);
+                    selectElement.innerHTML = '<option value="">Error loading details</option>';
+                });
+        }
         document.addEventListener('DOMContentLoaded', function () {
             const vehicleSelect = document.getElementById('vehicle');
 
             const violationSelects = document.querySelectorAll('.violation-select');
             violationSelects.forEach(select => {
                 const index = select.getAttribute('data-index');
-                const detailSelect = document.getElementById(`violation-${index}`);
-
-                detailSelect.innerHTML = '<option value="">Loading...</option>';
-
-                // Fetch detailed violations from backend
-                fetch(`/get_violations`)
-                    .then(response => response.json())
-                    .then(data => {
-                        detailSelect.innerHTML = '<option value="">Chọn lỗi vi phạm</option>';
-                        if (data.violation_types && data.violation_types.length > 0) {
-                            data.violation_types.forEach(detail => {
-                                const option = document.createElement('option');
-                                option.value = detail;
-                                option.textContent = detail;
-                                detailSelect.appendChild(option);
-                            });
-                        } else {
-                            detailSelect.innerHTML = '<option value="">Không có chi tiết lỗi</option>';
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error fetching detailed violations:', error);
-                        detailSelect.innerHTML = '<option value="">Error loading details</option>';
-                    });
+                const violationSelect = document.getElementById(`violation-${index}`);
+                populateViolationSelect(violationSelect);
             });
         });
 
