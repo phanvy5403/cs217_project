@@ -17,7 +17,7 @@ login_manager.login_view = 'login'
 db_config = {
     'host': 'localhost',
     'user': 'root',
-    'password': 'Phanvylqd@112',
+    'password': '123456789',
     'database': 'luatgiaothong',
     'charset': 'utf8mb4'
 }
@@ -332,6 +332,51 @@ def get_detailed_violations():
         return jsonify({'detailed_violations': detailed_violations})
     except Exception as e:
         logging.error(f'Error fetching detailed violations: {str(e)}', exc_info=True)
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+@app.route('/get_vehicle_types', methods=['GET'])
+@login_required
+def get_vehicle_types():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    try:
+        # Query to fetch unique vehicle types
+        sql_query = "SELECT DISTINCT TenPhuongTien FROM phuongtien"
+        cursor.execute(sql_query)
+        results = cursor.fetchall()
+
+        # Extract vehicle names into a list
+        vehicle_types = [row['TenPhuongTien'] for row in results]
+
+        return jsonify({'vehicle_types': vehicle_types})
+    except Exception as e:
+        logging.error(f'Error fetching vehicle types: {str(e)}', exc_info=True)
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+@app.route('/get_violations', methods=['GET'])
+@login_required
+def get_violations():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    try:
+        sql_query = "SELECT DISTINCT NoiDung FROM loivipham"
+        cursor.execute(sql_query)
+        results = cursor.fetchall()
+
+        # Extract _violation names into a list
+        violation_types = [row['NoiDung'] for row in results]
+
+        return jsonify({'violation_types': violation_types})
+    except Exception as e:
+        logging.error(f'Error fetching violation types: {str(e)}', exc_info=True)
         return jsonify({'error': str(e)}), 500
     finally:
         cursor.close()

@@ -205,4 +205,62 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert(`Error editing law: ${error.message}`);
             });
     });
+
+    function loadVehicleTypes() {
+        const vehicleDropdown = document.getElementById('PhuongTien');
+        vehicleDropdown.innerHTML = '<option value="">Loading...</option>'; // Placeholder
+
+        fetch('/get_vehicle_types')
+            .then(response => response.json())
+            .then(data => {
+                vehicleDropdown.innerHTML = ''; // Clear existing options
+                if (data.vehicle_types && data.vehicle_types.length > 0) {
+                    data.vehicle_types.forEach(vehicle => {
+                        const option = document.createElement('option');
+                        option.value = vehicle; // Assuming `value` contains the unique identifier
+                        option.textContent = vehicle; // Assuming `label` contains the display text
+                        vehicleDropdown.appendChild(option);
+                    });
+                } else {
+                    vehicleDropdown.innerHTML = '<option value="">No vehicles available</option>';
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching vehicle types:', error);
+                vehicleDropdown.innerHTML = '<option value="">Error loading vehicles</option>';
+            });
+    }
+
+    function loadViolations() {
+
+        const detailSelect = document.getElementById(`LoiViPham`);
+
+        detailSelect.innerHTML = '<option value="">Loading...</option>';
+
+        // Fetch detailed violations from backend
+        fetch(`/get_violations`)
+            .then(response => response.json())
+            .then(data => {
+                detailSelect.innerHTML = '<option value="">Chọn lỗi vi phạm</option>';
+                if (data.violation_types && data.violation_types.length > 0) {
+                    data.violation_types.forEach(detail => {
+                        const option = document.createElement('option');
+                        option.value = detail;
+                        option.textContent = detail;
+                        detailSelect.appendChild(option);
+                    });
+                } else {
+                    detailSelect.innerHTML = '<option value="">Không có chi tiết lỗi</option>';
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching detailed violations:', error);
+                detailSelect.innerHTML = '<option value="">Error loading details</option>';
+            });
+    };
+
+    document.getElementById('addLawModal').addEventListener('show.bs.modal', () => {
+        loadVehicleTypes(); // Dynamically load vehicle types when modal is shown
+        loadViolations();
+    });
 });

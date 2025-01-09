@@ -111,9 +111,7 @@
                     </div>
                     <div class="col-md-4">
                         <select id="searchVehicle" class="form-select">
-                            <option value="">Loại phương tiện</option>
-                            <option value="Ô tô">Ô tô</option>
-                            <option value="Mô tô, gắn máy">Mô tô, gắn máy</option>
+                            <option value="">Loading...</option>
                         </select>
                     </div>
                     <div class="col-md-4">
@@ -157,8 +155,7 @@
                     <div class="mb-3">
                         <label for="vehicle" class="form-label">Loại phương tiện</label>
                         <select id="vehicle" class="form-select">
-                            <option value="Mô tô, gắn máy">Mô tô, gắn máy</option>
-                            <option value="Ô tô">Ô tô</option>
+                            <option value="">Loading...</option>
                         </select>
                     </div>
                     <div id="violations">
@@ -190,6 +187,52 @@
             });
         }, 5000);
 
+        document.addEventListener('DOMContentLoaded', function () {
+            const vehicleSelect = document.getElementById('searchVehicle');
+
+            // Fetch vehicle types from the backend
+            fetch('/get_vehicle_types')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.vehicle_types) {
+                        vehicleSelect.innerHTML = '<option value="">Chọn loại phương tiện</option>'; // Default option
+                        data.vehicle_types.forEach(vehicle => {
+                            vehicleSelect.innerHTML += `<option value="${vehicle}">${vehicle}</option>`;
+                        });
+                    } else {
+                        vehicleSelect.innerHTML = '<option value="">No options available</option>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching vehicle types:', error);
+                    vehicleSelect.innerHTML = '<option value="">Error loading options</option>';
+                });
+        });
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const vehicleSelect = document.getElementById('vehicle');
+
+            // Fetch vehicle types from the backend
+            fetch('/get_vehicle_types')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.vehicle_types) {
+                        vehicleSelect.innerHTML = '<option value="">Chọn loại phương tiện</option>'; // Default option
+                        data.vehicle_types.forEach(vehicle => {
+                            vehicleSelect.innerHTML += `<option value="${vehicle}">${vehicle}</option>`;
+                        });
+                    } else {
+                        vehicleSelect.innerHTML = '<option value="">No options available</option>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching vehicle types:', error);
+                    vehicleSelect.innerHTML = '<option value="">Error loading options</option>';
+                });
+        });
+
+
+
         // Handle dynamic violation forms
         document.getElementById('violation-count').addEventListener('input', function() {
             const count = parseInt(this.value);
@@ -203,13 +246,6 @@
                     <div class="mb-3">
                         <label for="violation-${i}" class="form-label">Lỗi Vi Phạm</label>
                         <select id="violation-${i}" class="form-select violation-select" data-index="${i}">
-                            <option value="">Chọn lỗi vi phạm</option>
-                            <option value="Lỗi chạy quá tốc độ quy định">Lỗi chạy quá tốc độ quy định</option>
-                            <option value="Lỗi đi không đúng làn đường">Lỗi đi không đúng làn đường</option>
-                            <option value="Lỗi về giấy tờ xe">Lỗi về giấy tờ xe</option>
-                            <option value="Lỗi đỗ xe, dừng xe sai quy định">Lỗi đỗ xe, dừng xe sai quy định</option>
-                            <option value="Lỗi sử dụng còi xe sai quy định">Lỗi sử dụng còi xe sai quy định</option>
-                            <option value="Lỗi về vi phạm nồng độ cồn">Lỗi về vi phạm nồng độ cồn</option>
                         </select>
                     </div>
                     <div class="mb-3">
@@ -219,8 +255,41 @@
                         </select>
                     </div>
                 `;
+                // Add event listener for "violation-select"
                 violationsContainer.appendChild(violationForm);
             }
+        });
+        document.addEventListener('DOMContentLoaded', function () {
+            const vehicleSelect = document.getElementById('vehicle');
+
+            const violationSelects = document.querySelectorAll('.violation-select');
+            violationSelects.forEach(select => {
+                const index = select.getAttribute('data-index');
+                const detailSelect = document.getElementById(`violation-${index}`);
+
+                detailSelect.innerHTML = '<option value="">Loading...</option>';
+
+                // Fetch detailed violations from backend
+                fetch(`/get_violations`)
+                    .then(response => response.json())
+                    .then(data => {
+                        detailSelect.innerHTML = '<option value="">Chọn lỗi vi phạm</option>';
+                        if (data.violation_types && data.violation_types.length > 0) {
+                            data.violation_types.forEach(detail => {
+                                const option = document.createElement('option');
+                                option.value = detail;
+                                option.textContent = detail;
+                                detailSelect.appendChild(option);
+                            });
+                        } else {
+                            detailSelect.innerHTML = '<option value="">Không có chi tiết lỗi</option>';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching detailed violations:', error);
+                        detailSelect.innerHTML = '<option value="">Error loading details</option>';
+                    });
+            });
         });
 
         // Handle vehicle selection to populate detailed violations
