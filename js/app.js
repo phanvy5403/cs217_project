@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const isAdmin = document.body.getAttribute('data-role') === 'admin';
 
     // Fetch laws based on search parameters
-    function fetchLaws(query = '', vehicle = '', penalty = '', page = 1, per_page = 2) {
+    function fetchLaws(query = '', vehicle = '', penalty = '', page = 1, per_page = 10) {  // Update to 10 records per page
         const url = `/search?query=${encodeURIComponent(query)}&vehicle=${encodeURIComponent(vehicle)}&penalty=${encodeURIComponent(penalty)}&page=${page}&per_page=${per_page}`;
 
         fetch(url)
@@ -141,6 +141,55 @@ document.addEventListener('DOMContentLoaded', () => {
     // Fetch laws when the page is loaded
     fetchLaws();
 
+    // Fetch LoiViPham options
+    fetch('/get_loivipham')
+        .then(response => {
+            console.log('LoiViPham response:', response);
+            return response.json();
+        })
+        .then(data => {
+            console.log('LoiViPham data:', data);
+            const loiViPhamSelect = document.getElementById('LoiViPham');
+            loiViPhamSelect.innerHTML = '<option value="">Chọn lỗi vi phạm</option>'; // Clear existing options
+            data.loivipham.forEach(loiViPham => {
+                const option = document.createElement('option');
+                option.value = loiViPham;
+                option.textContent = loiViPham;
+                loiViPhamSelect.appendChild(option);
+            });
+        })
+        .catch(error => console.error('Error fetching LoiViPham:', error));
+
+    // Fetch PhuongTien options
+    fetch('/get_phuongtien')
+        .then(response => {
+            console.log('PhuongTien response:', response);
+            return response.json();
+        })
+        .then(data => {
+            console.log('PhuongTien data:', data);
+            const phuongTienSelect = document.getElementById('PhuongTien');
+            phuongTienSelect.innerHTML = '<option value="">Chọn loại phương tiện</option>'; // Clear existing options
+            const uniquePhuongTien = [...new Set(data.phuongtien)]; // Ensure unique options
+            uniquePhuongTien.forEach(phuongTien => {
+                const option = document.createElement('option');
+                option.value = phuongTien;
+                option.textContent = phuongTien;
+                phuongTienSelect.appendChild(option);
+            });
+
+            // Update the PhuongTien combobox on the "Tra cứu Luật" tab
+            const searchVehicleSelect = document.getElementById('searchVehicle');
+            searchVehicleSelect.innerHTML = '<option value="">Loại phương tiện</option>'; // Clear existing options
+            uniquePhuongTien.forEach(phuongTien => {
+                const option = document.createElement('option');
+                option.value = phuongTien;
+                option.textContent = phuongTien;
+                searchVehicleSelect.appendChild(option);
+            });
+        })
+        .catch(error => console.error('Error fetching PhuongTien:', error));
+
     // Save new law
     document.getElementById('saveLawButton').addEventListener('click', () => {
         const lawData = {
@@ -204,6 +253,182 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.log('Error editing law:', error);
                 alert(`Error editing law: ${error.message}`);
             });
+    });
+
+    // Fetch LoiViPham options for each violation form
+    function fetchLoiViPhamOptions() {
+        fetch('/get_loivipham')
+            .then(response => {
+                console.log('LoiViPham response:', response);
+                return response.json();
+            })
+            .then(data => {
+                console.log('LoiViPham data:', data);
+                const violationSelects = document.querySelectorAll('.violation-select');
+                violationSelects.forEach(select => {
+                    select.innerHTML = '<option value="">Chọn lỗi vi phạm</option>'; // Clear existing options
+                    data.loivipham.forEach(loiViPham => {
+                        const option = document.createElement('option');
+                        option.value = loiViPham;
+                        option.textContent = loiViPham;
+                        select.appendChild(option);
+                    });
+                });
+            })
+            .catch(error => console.error('Error fetching LoiViPham:', error));
+    }
+
+    // Handle dynamic violation forms
+    document.getElementById('violation-count').addEventListener('input', function() {
+        const count = parseInt(this.value);
+        const violationsContainer = document.getElementById('violations');
+        violationsContainer.innerHTML = '';
+
+        for (let i = 0; i < count; i++) {
+            const violationForm = document.createElement('div');
+            violationForm.className = 'violation-form mb-3';
+            violationForm.innerHTML = `
+                <div class="mb-3">
+                    <label for="violation-${i}" class="form-label">Lỗi Vi Phạm</label>
+                    <select id="violation-${i}" class="form-select violation-select" data-index="${i}" required>
+                        <option value="">Chọn lỗi vi phạm</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="detail-${i}" class="form-label">Chi tiết lỗi</label>
+                    <select id="detail-${i}" class="form-select" required>
+                        <option value="">Chọn chi tiết lỗi</option>
+                        <option value="null">Không</option>
+                    </select>
+                </div>
+            `;
+            violationsContainer.appendChild(violationForm);
+        }
+
+        // Fetch LoiViPham options for each violation form
+        fetchLoiViPhamOptions();
+    });
+
+    // Fetch PhuongTien options for the vehicle combobox
+    fetch('/get_phuongtien')
+        .then(response => {
+            console.log('PhuongTien response:', response);
+            return response.json();
+        })
+        .then(data => {
+            console.log('PhuongTien data:', data);
+            const phuongTienSelect = document.getElementById('vehicle');
+            phuongTienSelect.innerHTML = '<option value="">Chọn loại phương tiện</option>'; // Clear existing options
+            const uniquePhuongTien = [...new Set(data.phuongtien)]; // Ensure unique options
+            uniquePhuongTien.forEach(phuongTien => {
+                const option = document.createElement('option');
+                option.value = phuongTien;
+                option.textContent = phuongTien;
+                phuongTienSelect.appendChild(option);
+            });
+        })
+        .catch(error => console.error('Error fetching PhuongTien:', error));
+
+    // Handle vehicle selection to populate detailed violations
+    document.getElementById('vehicle').addEventListener('change', function() {
+        const vehicle = this.value;
+        const violationSelects = document.querySelectorAll('.violation-select');
+        violationSelects.forEach(select => {
+            const index = select.getAttribute('data-index');
+            const detailSelect = document.getElementById(`detail-${index}`);
+            const violation = select.value;
+
+            if (violation && vehicle) {
+                // Fetch detailed violations based on selected violation and vehicle
+                fetch(`/get_detailed_violations?violation=${encodeURIComponent(violation)}&vehicle=${encodeURIComponent(vehicle)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        detailSelect.innerHTML = '<option value="">Chọn chi tiết lỗi</option>';
+                        detailSelect.innerHTML += '<option value="null">Không</option>';
+                        data.detailed_violations.forEach(detail => {
+                            if (detail !== null) { // Filter out null values
+                                detailSelect.innerHTML += `<option value="${detail}">${detail}</option>`;
+                            }
+                        });
+                    })
+                    .catch(error => {
+                        console.error('Error fetching detailed violations:', error);
+                    });
+            } else {
+                detailSelect.innerHTML = '<option value="">Chọn chi tiết lỗi</option>';
+                detailSelect.innerHTML += '<option value="null">Không</option>';
+            }
+        });
+    });
+
+    // Handle violation selection to populate detailed violations
+    document.addEventListener('change', function(event) {
+        if (event.target.classList.contains('violation-select')) {
+            const index = event.target.getAttribute('data-index');
+            const violationSelect = document.getElementById(`violation-${index}`);
+            const detailSelect = document.getElementById(`detail-${index}`);
+            const violation = violationSelect.value;
+            const vehicle = document.getElementById('vehicle').value;
+
+            if (violation && vehicle) {
+                // Fetch detailed violations based on selected violation and vehicle
+                fetch(`/get_detailed_violations?violation=${encodeURIComponent(violation)}&vehicle=${encodeURIComponent(vehicle)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        detailSelect.innerHTML = '<option value="">Chọn chi tiết lỗi</option>';
+                        detailSelect.innerHTML += '<option value="null">Không</option>';
+                        data.detailed_violations.forEach(detail => {
+                            if (detail !== null) { // Filter out null values
+                                detailSelect.innerHTML += `<option value="${detail}">${detail}</option>`;
+                            }
+                        });
+                    })
+                    .catch(error => {
+                        console.error('Error fetching detailed violations:', error);
+                    });
+            } else {
+                detailSelect.innerHTML = '<option value="">Chọn chi tiết lỗi</option>';
+                detailSelect.innerHTML += '<option value="null">Không</option>';
+            }
+        }
+    });
+
+    // Handle calculate penalty button click
+    document.getElementById('calculate-penalty').addEventListener('click', function() {
+        const violationForms = document.querySelectorAll('.violation-form');
+        const penaltiesContainer = document.getElementById('penalties');
+        penaltiesContainer.innerHTML = '';
+
+        violationForms.forEach((form, index) => {
+            const violation = form.querySelector(`#violation-${index}`).value;
+            const vehicle = document.getElementById('vehicle').value;
+            const detail = form.querySelector(`#detail-${index}`).value;
+
+            if (violation && vehicle) {
+                // Fetch penalty based on selected violation, vehicle, and detail
+                fetch(`/calculate_penalty?violation=${encodeURIComponent(violation)}&vehicle=${encodeURIComponent(vehicle)}&detail=${encodeURIComponent(detail)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        const penalty = data.penalty;
+                        const penaltyElement = document.createElement('div');
+                        penaltyElement.className = 'penalty mb-3';
+                        penaltyElement.innerHTML = `
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title">Lỗi: ${violation}</h5>
+                                    <p class="card-text">Phương tiện: ${vehicle}</p>
+                                    <p class="card-text">Chi tiết lỗi: ${detail}</p>
+                                    <p class="card-text">Hình phạt: ${penalty}</p>
+                                </div>
+                            </div>
+                        `;
+                        penaltiesContainer.appendChild(penaltyElement);
+                    })
+                    .catch(error => {
+                        console.error('Error calculating penalty:', error);
+                    });
+            }
+        });
     });
 
     function loadVehicleTypes() {
